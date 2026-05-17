@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { users, roles } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { writeActivityLog } from '@/lib/audit';
 
 export interface BulkEnrollmentInput {
     fullName: string;
@@ -39,6 +40,15 @@ export async function bulkEnrollUsers(data: BulkEnrollmentInput[]) {
                     identifier: user.identifier,
                     error: 'User dengan NIM/NIDN ini sudah ada'
                 });
+                await writeActivityLog({
+                    module: 'users',
+                    action: 'bulk_enroll',
+                    status: 'failed',
+                    entityType: 'user',
+                    entityId: user.identifier,
+                    description: 'Bulk enroll gagal: user sudah ada',
+                    metadata: { identifier: user.identifier, fullName: user.fullName },
+                });
                 continue;
             }
 
@@ -56,16 +66,39 @@ export async function bulkEnrollUsers(data: BulkEnrollmentInput[]) {
             });
 
             results.success++;
+            await writeActivityLog({
+                module: 'users',
+                action: 'bulk_enroll',
+                entityType: 'user',
+                entityId: user.identifier,
+                description: 'User berhasil di-enroll (pre-registered)',
+                metadata: { identifier: user.identifier, fullName: user.fullName, roleId: user.roleId, batch: user.batch },
+            });
         } catch (error: any) {
             results.failed++;
             results.errors.push({
                 identifier: user.identifier,
                 error: error.message || 'Unknown error'
             });
+            await writeActivityLog({
+                module: 'users',
+                action: 'bulk_enroll',
+                status: 'failed',
+                entityType: 'user',
+                entityId: user.identifier,
+                description: 'Bulk enroll gagal karena error sistem',
+                metadata: { identifier: user.identifier, fullName: user.fullName, error: error.message },
+            });
         }
     }
 
     revalidatePath('/admin/governance');
+    await writeActivityLog({
+        module: 'users',
+        action: 'bulk_enroll_summary',
+        description: `Bulk enroll selesai: ${results.success} berhasil, ${results.failed} gagal`,
+        metadata: { total: data.length, success: results.success, failed: results.failed, errors: results.errors },
+    });
     return results;
 }
 
