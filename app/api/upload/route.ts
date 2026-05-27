@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { DocumentVerifier, type DocumentType } from '@/lib/documentVerifier';
+import { writeActivityLog, getErrorMessage } from '@/lib/audit';
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
@@ -68,6 +69,14 @@ export async function POST(request: NextRequest) {
 
                 if (!result.fileValid) {
                     // File saved but not a valid document
+                    await writeActivityLog({
+                        module: 'uploads',
+                        action: 'upload_file',
+                        entityType: 'file',
+                        entityId: publicPath,
+                        description: 'User mengunggah file dengan hasil verifikasi dokumen tidak valid',
+                        metadata: { folder, filename, fileType: file.type, fileSize: file.size, verify, docType, verification: result },
+                    });
                     return NextResponse.json({
                         success: true,
                         path: publicPath,
@@ -84,6 +93,14 @@ export async function POST(request: NextRequest) {
                     });
                 }
 
+                await writeActivityLog({
+                    module: 'uploads',
+                    action: 'upload_file',
+                    entityType: 'file',
+                    entityId: publicPath,
+                    description: 'User mengunggah file',
+                    metadata: { folder, filename, fileType: file.type, fileSize: file.size, verify, docType, verification: result.verification },
+                });
                 return NextResponse.json({
                     success: true,
                     path: publicPath,
@@ -93,6 +110,14 @@ export async function POST(request: NextRequest) {
             } catch (verifyError) {
                 console.error('Verification error:', verifyError);
                 // File saved, but verification failed — return without verification data
+                await writeActivityLog({
+                    module: 'uploads',
+                    action: 'upload_file',
+                    entityType: 'file',
+                    entityId: publicPath,
+                    description: 'User mengunggah file, tetapi proses verifikasi gagal',
+                    metadata: { folder, filename, fileType: file.type, fileSize: file.size, verify, docType, error: getErrorMessage(verifyError) },
+                });
                 return NextResponse.json({
                     success: true,
                     path: publicPath,
@@ -102,6 +127,14 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        await writeActivityLog({
+            module: 'uploads',
+            action: 'upload_file',
+            entityType: 'file',
+            entityId: publicPath,
+            description: 'User mengunggah file',
+            metadata: { folder, filename, fileType: file.type, fileSize: file.size },
+        });
         return NextResponse.json({
             success: true,
             path: publicPath,
@@ -110,6 +143,14 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('Upload error:', error);
+        await writeActivityLog({
+            module: 'uploads',
+            action: 'upload_file',
+            entityType: 'file',
+            status: 'failed',
+            description: 'Gagal mengunggah file',
+            metadata: { error: getErrorMessage(error) },
+        });
         return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
     }
 }
