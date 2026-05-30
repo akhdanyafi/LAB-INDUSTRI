@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache';
 import { requireAnyPermission, getSession } from '@/lib/auth';
 import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
+import { writeActivityLog, getErrorMessage } from '@/lib/audit';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -79,9 +80,11 @@ export async function uploadPracticumLpjDoc(formData: FormData) {
         revalidatePath('/lecturer/manage/scheduled-practicum');
         revalidatePath('/student/manage/scheduled-practicum');
 
+        await writeActivityLog({ module: 'practicum_lpj', action: 'upload', entityType: 'practicum_lpj_doc', description: 'User mengunggah LPJ praktikum', metadata: { title, scheduledPracticumId, periodMonth, periodYear, fileName: file.name, fileSize: file.size } });
         return { success: true };
     } catch (error: any) {
         console.error('Error uploading LPJ:', error);
+        await writeActivityLog({ module: 'practicum_lpj', action: 'upload', entityType: 'practicum_lpj_doc', status: 'failed', description: 'Gagal mengunggah LPJ praktikum', metadata: { formData, error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal mengunggah LPJ' };
     }
 }
@@ -107,8 +110,10 @@ export async function deletePracticumLpjDoc(id: number) {
         revalidatePath('/lecturer/manage/scheduled-practicum');
         revalidatePath('/student/manage/scheduled-practicum');
 
+        await writeActivityLog({ module: 'practicum_lpj', action: 'delete', entityType: 'practicum_lpj_doc', entityId: id, description: 'User menghapus LPJ praktikum', metadata: { id, uploaderId: doc.uploaderId, isAdmin, isOwner } });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({ module: 'practicum_lpj', action: 'delete', entityType: 'practicum_lpj_doc', entityId: id, status: 'failed', description: 'Gagal menghapus LPJ praktikum', metadata: { error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal menghapus LPJ' };
     }
 }
