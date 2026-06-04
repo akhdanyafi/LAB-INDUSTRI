@@ -3,6 +3,7 @@
 import { db } from '@/db';
 import { labAttendance, itemLoans, roomBookings, users, rooms, items } from '@/db/schema';
 import { eq, gte, lte, and } from 'drizzle-orm';
+import { writeActivityLog } from '@/lib/audit';
 
 interface ExportFilters {
     startDate: string;
@@ -69,6 +70,13 @@ export async function exportAttendanceData(filters: ExportFilters) {
     });
 
     const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    await writeActivityLog({
+        module: 'exports',
+        action: 'export_attendance_csv',
+        entityType: 'lab_attendance',
+        description: 'User mengekspor data absensi',
+        metadata: { filters, count: records.length },
+    });
     return { csv: csvContent, count: records.length };
 }
 
@@ -117,6 +125,13 @@ export async function exportLoanData(filters: ExportFilters) {
     ]);
 
     const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    await writeActivityLog({
+        module: 'exports',
+        action: 'export_loans_csv',
+        entityType: 'item_loan',
+        description: 'User mengekspor data peminjaman',
+        metadata: { filters, count: records.length },
+    });
     return { csv: csvContent, count: records.length };
 }
 
@@ -173,6 +188,12 @@ export async function exportBookingData(filters: ExportFilters) {
     });
 
     const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    await writeActivityLog({
+        module: 'exports',
+        action: 'export_bookings_csv',
+        entityType: 'room_booking',
+        description: 'User mengekspor data booking ruangan',
+        metadata: { filters, count: records.length },
+    });
     return { csv: csvContent, count: records.length };
 }
-
