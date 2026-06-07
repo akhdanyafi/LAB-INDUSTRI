@@ -24,6 +24,7 @@ import {
     Settings,
     Download,
     Megaphone,
+    Shield,
     type LucideIcon
 } from 'lucide-react';
 
@@ -44,6 +45,7 @@ const iconMap: Record<string, LucideIcon> = {
     Settings,
     Download,
     Megaphone,
+    Shield,
 };
 
 interface MenuItem {

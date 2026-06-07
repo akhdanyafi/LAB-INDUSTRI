@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { requirePermission, getSession } from '@/lib/auth';
 import { createPracticumReportSchema, verifyPracticumReportSchema } from './validator';
 import type { CreatePracticumReportInput, VerifyPracticumReportInput } from './types';
+import { writeActivityLog, getErrorMessage } from '@/lib/audit';
 
 /**
  * Get all practicum reports (admin)
@@ -65,9 +66,11 @@ export async function createPracticumReport(data: CreatePracticumReportInput) {
         revalidatePath('/student/manage/scheduled-practicum');
         revalidatePath('/lecturer/manage/scheduled-practicum');
 
+        await writeActivityLog({ module: 'practicum_reports', action: 'create', entityType: 'practicum_report', description: 'User membuat berita acara praktikum', metadata: { ...validated, lecturerName } });
         return { success: true };
     } catch (error: any) {
         console.error('Error creating practicum report:', error);
+        await writeActivityLog({ module: 'practicum_reports', action: 'create', entityType: 'practicum_report', status: 'failed', description: 'Gagal membuat berita acara praktikum', metadata: { data, error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal membuat berita acara' };
     }
 }
@@ -91,9 +94,11 @@ export async function verifyPracticumReport(id: number, data: VerifyPracticumRep
         revalidatePath('/student/manage/scheduled-practicum');
         revalidatePath('/lecturer/manage/scheduled-practicum');
 
+        await writeActivityLog({ module: 'practicum_reports', action: 'verify', entityType: 'practicum_report', entityId: id, description: 'User memverifikasi berita acara praktikum', metadata: validated });
         return { success: true };
     } catch (error: any) {
         console.error('Error verifying practicum report:', error);
+        await writeActivityLog({ module: 'practicum_reports', action: 'verify', entityType: 'practicum_report', entityId: id, status: 'failed', description: 'Gagal memverifikasi berita acara praktikum', metadata: { data, error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal memverifikasi berita acara' };
     }
 }
@@ -117,9 +122,11 @@ export async function lecturerVerifyPracticumReport(id: number, data: VerifyPrac
         revalidatePath('/admin/scheduled-practicum');
         revalidatePath('/lecturer/manage/scheduled-practicum');
 
+        await writeActivityLog({ module: 'practicum_reports', action: 'lecturer_verify', entityType: 'practicum_report', entityId: id, description: 'Dosen memverifikasi berita acara praktikum', metadata: validated });
         return { success: true };
     } catch (error: any) {
         console.error('Error verifying practicum report (lecturer):', error);
+        await writeActivityLog({ module: 'practicum_reports', action: 'lecturer_verify', entityType: 'practicum_report', entityId: id, status: 'failed', description: 'Gagal memverifikasi berita acara praktikum oleh dosen', metadata: { data, error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal memverifikasi berita acara' };
     }
 }
@@ -140,9 +147,11 @@ export async function deletePracticumReport(id: number) {
         revalidatePath('/student/manage/scheduled-practicum');
         revalidatePath('/lecturer/manage/scheduled-practicum');
 
+        await writeActivityLog({ module: 'practicum_reports', action: 'delete', entityType: 'practicum_report', entityId: id, description: 'Admin menghapus berita acara praktikum' });
         return { success: true };
     } catch (error: any) {
         console.error('Error deleting practicum report:', error);
+        await writeActivityLog({ module: 'practicum_reports', action: 'delete', entityType: 'practicum_report', entityId: id, status: 'failed', description: 'Gagal menghapus berita acara praktikum', metadata: { error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal menghapus berita acara' };
     }
 }
@@ -165,9 +174,11 @@ export async function lecturerDeletePracticumReport(id: number) {
         revalidatePath('/lecturer/manage/scheduled-practicum');
         revalidatePath('/admin/scheduled-practicum');
 
+        await writeActivityLog({ module: 'practicum_reports', action: 'lecturer_delete', entityType: 'practicum_report', entityId: id, description: 'Dosen menghapus berita acara praktikum' });
         return { success: true };
     } catch (error: any) {
         console.error('Error deleting practicum report (lecturer):', error);
+        await writeActivityLog({ module: 'practicum_reports', action: 'lecturer_delete', entityType: 'practicum_report', entityId: id, status: 'failed', description: 'Gagal menghapus berita acara praktikum oleh dosen', metadata: { error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal menghapus berita acara' };
     }
 }
@@ -188,9 +199,11 @@ export async function deleteAllPracticumReports() {
         revalidatePath('/student/manage/scheduled-practicum');
         revalidatePath('/lecturer/manage/scheduled-practicum');
 
+        await writeActivityLog({ module: 'practicum_reports', action: 'delete_all', entityType: 'practicum_report', description: 'Admin menghapus semua berita acara praktikum' });
         return { success: true };
     } catch (error: any) {
         console.error('Error deleting all practicum reports:', error);
+        await writeActivityLog({ module: 'practicum_reports', action: 'delete_all', entityType: 'practicum_report', status: 'failed', description: 'Gagal menghapus semua berita acara praktikum', metadata: { error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal menghapus semua berita acara' };
     }
 }
