@@ -216,9 +216,6 @@ export default function ScheduledPracticumManager({ schedules, courses, modules,
                     Jadwal Massal
                 </button>
             </div>
-                    Jadwal Massal
-                </button>
-            </div>
 
             {showBulkForm && (
                 <BulkScheduleForm
