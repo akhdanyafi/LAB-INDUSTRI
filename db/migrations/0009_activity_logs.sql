@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS `activity_logs` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `actor_id` VARCHAR(50) NULL,
+    `actor_name` VARCHAR(255) NULL,
+    `actor_email` VARCHAR(255) NULL,
+    `actor_role` VARCHAR(50) NULL,
+    `module` VARCHAR(100) NOT NULL,
+    `action` VARCHAR(100) NOT NULL,
+    `entity_type` VARCHAR(100) NULL,
+    `entity_id` VARCHAR(100) NULL,
+    `status` VARCHAR(20) NOT NULL DEFAULT 'success',
+    `description` TEXT NULL,
+    `metadata` TEXT NULL,
+    `ip_address` VARCHAR(45) NULL,
+    `user_agent` TEXT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `activity_logs_actor_idx` (`actor_id`),
+    INDEX `activity_logs_module_action_idx` (`module`, `action`),
+    INDEX `activity_logs_entity_idx` (`entity_type`, `entity_id`),
+    INDEX `activity_logs_created_at_idx` (`created_at`)
+);
