@@ -16,6 +16,7 @@ interface Item {
     description: string | null;
     status: 'Tersedia' | 'Dipinjam' | 'Maintenance' | null;
     qrCode: string;
+    quantity: number;
     category: { id: number; name: string };
     room: { id: number; name: string };
 }
@@ -90,6 +91,7 @@ export default function ItemsView({ items, rooms, categories }: ItemsViewProps) 
         const categoryId = parseInt(formData.get('categoryId') as string);
         const roomId = parseInt(formData.get('roomId') as string);
         const description = formData.get('description') as string;
+        const quantity = parseInt(formData.get('quantity') as string) || 1;
 
         try {
             await updateItem(editingItem.id, {
@@ -97,6 +99,7 @@ export default function ItemsView({ items, rooms, categories }: ItemsViewProps) 
                 categoryId,
                 roomId,
                 description: description || undefined,
+                quantity,
                 status: editingItem.status || 'Tersedia' as const
             });
             setEditingItem(null);
@@ -132,6 +135,7 @@ export default function ItemsView({ items, rooms, categories }: ItemsViewProps) 
                     const categoryId = parseInt(formData.get('categoryId') as string);
                     const roomId = parseInt(formData.get('roomId') as string);
                     const description = formData.get('description') as string;
+                    const quantity = parseInt(formData.get('quantity') as string) || 1;
 
                     // Generate QR code string (using timestamp + random for uniqueness)
                     const qrCode = `ITEM-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
@@ -143,6 +147,7 @@ export default function ItemsView({ items, rooms, categories }: ItemsViewProps) 
                             roomId,
                             description: description || undefined,
                             qrCode,
+                            quantity,
                             status: 'Tersedia'
                         });
                         const form = document.getElementById('add-item-form') as HTMLFormElement;
@@ -176,6 +181,10 @@ export default function ItemsView({ items, rooms, categories }: ItemsViewProps) 
                                 <option key={room.id} value={room.id}>{room.name}</option>
                             ))}
                         </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
+                        <input name="quantity" type="number" min={1} defaultValue={1} required className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi (Opsional)</label>
@@ -273,6 +282,7 @@ export default function ItemsView({ items, rooms, categories }: ItemsViewProps) 
                                 <th className="px-6 py-4 font-semibold text-gray-700">Nama Alat</th>
                                 <th className="px-6 py-4 font-semibold text-gray-700">Kategori</th>
                                 <th className="px-6 py-4 font-semibold text-gray-700">Lokasi</th>
+                                <th className="px-6 py-4 font-semibold text-gray-700 text-center">Jumlah</th>
                                 <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
                                 <th className="px-6 py-4 font-semibold text-gray-700">QR Code</th>
                                 <th className="px-6 py-4 font-semibold text-gray-700 text-center">Aksi</th>
@@ -304,6 +314,11 @@ export default function ItemsView({ items, rooms, categories }: ItemsViewProps) 
                                         <span className="flex items-center gap-1 text-sm">
                                             <MapPin className="w-4 h-4 text-gray-400" />
                                             {item.room.name}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-semibold">
+                                            {item.quantity}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
@@ -379,7 +394,7 @@ export default function ItemsView({ items, rooms, categories }: ItemsViewProps) 
                             ))}
                             {filteredItems.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                                         {items.length === 0
                                             ? 'Belum ada data alat. Silahkan tambahkan alat baru.'
                                             : 'Tidak ada alat yang sesuai filter.'}
@@ -489,6 +504,17 @@ export default function ItemsView({ items, rooms, categories }: ItemsViewProps) 
                                     <option key={room.id} value={room.id}>{room.name}</option>
                                 ))}
                             </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
+                            <input
+                                name="quantity"
+                                type="number"
+                                min={1}
+                                required
+                                defaultValue={editingItem.quantity || 1}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
