@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { practicumReports, users } from '@/db/schema';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
+import { writeActivityLog } from '@/lib/audit';
 
 function getDateRange(type: string, refDate: string) {
     const base = refDate ? new Date(refDate) : new Date();
@@ -204,6 +205,14 @@ export async function GET(request: NextRequest) {
     const filename = `Berita_Acara_${periodLabel[periodType] || 'Laporan'}_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    await writeActivityLog({
+        module: 'practicum_reports',
+        action: 'export_xlsx',
+        entityType: 'practicum_report',
+        description: 'User mengekspor berita acara praktikum XLSX',
+        metadata: { periodType, startDate, endDate, count: reports.length, filename },
+    });
 
     return new NextResponse(buf, {
         status: 200,
