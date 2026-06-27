@@ -112,14 +112,21 @@ export class CourseService {
      * Create a new course
      */
     static async create(data: CreateCourseInput) {
-        await db.insert(courses).values({
-            code: data.code,
-            name: data.name,
-            description: data.description || null,
-            sks: data.sks || 3,
-            semester: data.semester || null,
-            lecturerId: data.lecturerId || null,
-        });
+        try {
+            await db.insert(courses).values({
+                code: data.code,
+                name: data.name,
+                description: data.description || null,
+                sks: data.sks || 3,
+                semester: data.semester || null,
+                lecturerId: data.lecturerId || null,
+            });
+        } catch (error: any) {
+            if (error?.cause?.code === 'ER_DUP_ENTRY' || error?.code === 'ER_DUP_ENTRY') {
+                throw new Error(`Kode mata kuliah "${data.code}" sudah digunakan. Gunakan kode lain.`);
+            }
+            throw error;
+        }
     }
 
     /**
@@ -135,7 +142,14 @@ export class CourseService {
         if (data.semester !== undefined) updateData.semester = data.semester;
         if (data.lecturerId !== undefined) updateData.lecturerId = data.lecturerId;
 
-        await db.update(courses).set(updateData).where(eq(courses.id, id));
+        try {
+            await db.update(courses).set(updateData).where(eq(courses.id, id));
+        } catch (error: any) {
+            if (error?.cause?.code === 'ER_DUP_ENTRY' || error?.code === 'ER_DUP_ENTRY') {
+                throw new Error(`Kode mata kuliah "${data.code}" sudah digunakan. Gunakan kode lain.`);
+            }
+            throw error;
+        }
     }
 
     /**
