@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, MapPin, Tag, Calendar, Clock, Building2, GraduationCap, Upload, Check } from 'lucide-react';
+import { Box, MapPin, Tag, Calendar, Clock, Building2, GraduationCap, Upload, Check, Hash } from 'lucide-react';
 import { createLoanRequest, getLecturersForLoan } from '@/features/loans/actions';
 import { useRouter } from 'next/navigation';
 import { useAlert } from '@/components/providers/AlertProvider';
@@ -251,6 +251,12 @@ export default function ItemCard({ item, userId, variant = 'grid', role = 'stude
                                 <MapPin className="w-4 h-4 text-gray-400" />
                                 <span>{item.room.name}</span>
                             </div>
+                            {typeof item.quantity === 'number' && (
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <Hash className="w-4 h-4 text-gray-400" />
+                                    <span>Jumlah: {item.quantity}</span>
+                                </div>
+                            )}
                         </div>
 
                         {role === 'admin' ? (
