@@ -30,6 +30,7 @@ export interface CreateItemInput {
     roomId: number;
     description?: string;
     qrCode: string;
+    quantity?: number;
     status: 'Tersedia' | 'Dipinjam' | 'Maintenance';
 }
 
@@ -38,6 +39,7 @@ export interface UpdateItemInput {
     categoryId: number;
     roomId: number;
     description?: string;
+    quantity?: number;
     status: 'Tersedia' | 'Dipinjam' | 'Maintenance';
 }
 
