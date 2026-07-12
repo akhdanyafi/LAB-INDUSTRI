@@ -256,7 +256,7 @@ export default function AttendanceModal({ isOpen, onClose, userData }: Attendanc
                             </div>
                             <div>
                                 <h3 className="text-2xl font-bold text-green-600 mb-2">Absen Berhasil!</h3>
-                                <p className="text-gray-600">Selamat datang di Lab Industri</p>
+                                <p className="text-gray-600">Selamat datang di Lab Teknik Industri</p>
                             </div>
                             <div className="bg-gray-50 rounded-xl p-4 text-left space-y-3">
                                 <div className="flex justify-between items-center py-2 border-b border-gray-200">
