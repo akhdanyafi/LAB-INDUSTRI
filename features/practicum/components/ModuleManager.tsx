@@ -5,6 +5,7 @@ import { BookOpen, Plus, Trash2, Edit, Upload, X, Search, FileText, ExternalLink
 import { createModule, updateModule, deleteModule } from '@/features/practicum/actions';
 import type { PracticumModuleWithCourse } from '@/features/practicum/types';
 import type { CourseWithLecturer } from '@/features/courses/types';
+import { translateError } from '@/lib/error';
 
 interface ModuleManagerProps {
     modules: PracticumModuleWithCourse[];
@@ -137,8 +138,9 @@ export default function ModuleManager({ modules, courses }: ModuleManagerProps) 
                 setShowForm(false);
                 setEditingModule(null);
                 setSelectedFile(null);
-            } catch {
-                setMessage({ type: 'error', text: 'Gagal menyimpan modul' });
+            } catch (error) {
+                const { message } = translateError(error, 'Gagal menyimpan modul');
+                setMessage({ type: 'error', text: message });
             }
         });
     };
@@ -149,8 +151,9 @@ export default function ModuleManager({ modules, courses }: ModuleManagerProps) 
             try {
                 await deleteModule(id);
                 setMessage({ type: 'success', text: 'Modul berhasil dihapus!' });
-            } catch {
-                setMessage({ type: 'error', text: 'Gagal menghapus modul' });
+            } catch (error) {
+                const { message } = translateError(error, 'Gagal menghapus modul');
+                setMessage({ type: 'error', text: message });
             }
         });
     };

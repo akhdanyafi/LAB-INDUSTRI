@@ -28,7 +28,7 @@ export default async function AdminLayout({
                     initial: session.user.fullName.charAt(0)
                 }}
             />
-            <main className="flex-1 lg:ml-64 pt-20 p-4 lg:p-8 overflow-x-hidden">
+            <main className="flex-1 lg:ml-[var(--sidebar-width)] pt-20 p-4 lg:p-8 overflow-x-hidden">
                 <SessionRefresher />
                 {children}
             </main>
