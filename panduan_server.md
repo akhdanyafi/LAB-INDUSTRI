@@ -4,6 +4,22 @@ Panduan ini dipakai untuk mengupdate kode aplikasi LAB-INDUSTRI ke server produc
 
 Penting: beberapa migrasi di project ini bersifat additive, tetapi migrasi `0008_remove_video_profil_and_new_features.sql` memang menghapus data lama dengan `type = 'Video Profil'` karena fitur itu diganti oleh Pusat Download dan fitur laporan praktikum. Backup database dulu sebelum menjalankan SQL apa pun.
 
+## Konfigurasi Production Server Ini
+
+Konfigurasi yang diterapkan untuk deployment ini:
+
+| Item | Nilai |
+|------|-------|
+| Path project | `/home/lab-if/Documents/LAB-INDUSTRI` |
+| Domain publik | `https://labindustri.fstuai.id` |
+| Port lokal aplikasi | `3002` |
+| Database | `lab_industri_fstuai` |
+| User database | `lab_industri_app` |
+| File env | `/home/lab-if/Documents/LAB-INDUSTRI/.env` |
+| Proses PM2 | `lab-industri` |
+| Cloudflare tunnel | `lab-informatika` |
+| Target tunnel | `http://localhost:3002` |
+
 ## Daftar Isi
 
 1. [Prasyarat](#1-prasyarat)
@@ -12,8 +28,9 @@ Penting: beberapa migrasi di project ini bersifat additive, tetapi migrasi `0008
 4. [Migrasi Database](#4-migrasi-database)
 5. [Install Dependensi dan Build](#5-install-dependensi-dan-build)
 6. [Restart Aplikasi](#6-restart-aplikasi)
-7. [Verifikasi](#7-verifikasi)
-8. [Rollback jika Ada Masalah](#8-rollback-jika-ada-masalah)
+7. [Cloudflare Tunnel](#7-cloudflare-tunnel)
+8. [Verifikasi](#8-verifikasi)
+9. [Rollback jika Ada Masalah](#9-rollback-jika-ada-masalah)
 
 ## 1. Prasyarat
 
@@ -21,10 +38,11 @@ Pastikan hal berikut tersedia di server:
 
 - Node.js v20 atau lebih baru (`node -v`)
 - PM2 terpasang secara global (`pm2 -v`, atau `npm i -g pm2`)
-- MySQL berjalan dan database LAB-INDUSTRI sudah ada
+- MySQL berjalan dan database `lab_industri_fstuai` sudah ada
 - Git terpasang (`git -v`)
 - Akses SSH ke server
-- File `.env` sudah ada di server dan mengarah ke database production
+- File `.env` sudah ada di server dan mengarah ke database `lab_industri_fstuai`
+- `cloudflared` terpasang untuk tunnel ke `labindustri.fstuai.id`
 
 ## 2. Persiapan Lokal
 
@@ -102,6 +120,8 @@ Backup dulu:
 ```bash
 mysqldump -u root -p nama_database_lab_industri > backup_lab_industri_$(date +%Y%m%d_%H%M%S).sql
 ```
+
+Untuk server ini, ganti `nama_database_lab_industri` dengan `lab_industri_fstuai`.
 
 ### 4.1 - Permission system
 
@@ -279,7 +299,7 @@ Update ini menambah dependensi untuk upload stream, kalender, export Excel, dan 
 Jika proses PM2 sudah ada:
 
 ```bash
-pm2 restart lab-industri
+pm2 restart lab-industri --update-env
 pm2 status
 pm2 logs lab-industri --lines 50
 ```
@@ -287,31 +307,67 @@ pm2 logs lab-industri --lines 50
 Jika deploy pertama:
 
 ```bash
-pm2 start npm --name "lab-industri" -- start
+cd /home/lab-if/Documents/LAB-INDUSTRI
+PORT=3002 pm2 start npm --name "lab-industri" -- start
 pm2 save
 pm2 startup
 ```
 
 Jika nama proses di server berbeda, pakai nama proses yang sudah ada di `pm2 status`.
 
-## 7. Verifikasi
+## 7. Cloudflare Tunnel
 
-### 7.1 - Aplikasi hidup
+Login ulang Cloudflare jika token/certificate belum ada atau perlu diganti:
+
+```bash
+cloudflared tunnel login
+```
+
+Klik link yang muncul dari perintah tersebut, pilih domain `fstuai.id`, lalu izinkan akses. Setelah login sukses, route DNS ke tunnel aktif:
+
+```bash
+cloudflared tunnel route dns lab-informatika labindustri.fstuai.id
+```
+
+Tambahkan public hostname ini di `/etc/cloudflared/config.yml` sebelum rule `http_status:404`:
+
+```yaml
+  - hostname: labindustri.fstuai.id
+    service: http://localhost:3002
+```
+
+Restart service setelah config berubah:
+
+```bash
+sudo systemctl restart cloudflared
+```
+
+Pastikan public hostname `labindustri.fstuai.id` mengarah ke service `http://localhost:3002` di tunnel `lab-informatika`.
+
+## 8. Verifikasi
+
+### 8.1 - Aplikasi hidup
 
 ```bash
 pm2 status
-curl http://localhost:3000
+curl http://localhost:3002
 ```
 
 Jika port production berbeda, sesuaikan URL `curl`.
 
-### 7.2 - Cek log
+### 8.2 - Cek log
 
 ```bash
 pm2 logs lab-industri --lines 100 --nostream | grep -i "error\|warn\|fail"
 ```
 
-### 7.3 - Cek fitur manual
+### 8.3 - Cek domain
+
+```bash
+curl -I https://labindustri.fstuai.id
+```
+
+### 8.4 - Cek fitur manual
 
 | Fitur | Cara cek |
 |-------|----------|
@@ -324,7 +380,7 @@ pm2 logs lab-industri --lines 100 --nostream | grep -i "error\|warn\|fail"
 | Laporan praktikum | Dosen/Admin -> Laporan Praktikum/Berita Acara -> buat dan download laporan |
 | LPJ praktikum | Cek upload LPJ praktikum per jadwal dan periode |
 
-## 8. Rollback jika Ada Masalah
+## 9. Rollback jika Ada Masalah
 
 ### Rollback kode
 
