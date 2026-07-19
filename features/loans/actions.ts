@@ -7,6 +7,7 @@ import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { requirePermission } from '@/lib/auth';
 import { deleteFile } from '@/lib/upload';
+import { writeActivityLog, getErrorMessage } from '@/lib/audit';
 
 /**
  * Get available items for borrowing
@@ -37,8 +38,23 @@ export async function createLoanRequest(data: {
         revalidatePath('/student/items');
         revalidatePath('/admin/loans');
         revalidatePath('/admin/inventory');
+        await writeActivityLog({
+            module: 'loans',
+            action: 'create',
+            entityType: 'item_loan',
+            description: 'User membuat permintaan peminjaman alat',
+            metadata: data,
+        });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({
+            module: 'loans',
+            action: 'create',
+            entityType: 'item_loan',
+            status: 'failed',
+            description: 'Gagal membuat permintaan peminjaman alat',
+            metadata: { data, error: getErrorMessage(error) },
+        });
         return { success: false, error: error.message || 'Gagal membuat permintaan peminjaman' };
     }
 }
@@ -66,8 +82,25 @@ export async function updateLoanStatus(
         revalidatePath('/admin/loans');
         revalidatePath('/student/loans');
         revalidatePath('/admin/inventory');
+        await writeActivityLog({
+            module: 'loans',
+            action: status === 'Disetujui' ? 'approve' : 'reject',
+            entityType: 'item_loan',
+            entityId: loanId,
+            description: `Admin mengubah status peminjaman menjadi ${status}`,
+            metadata: { loanId, status, validatorId, rejectionReason },
+        });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({
+            module: 'loans',
+            action: 'update_status',
+            entityType: 'item_loan',
+            entityId: loanId,
+            status: 'failed',
+            description: 'Gagal mengubah status peminjaman',
+            metadata: { loanId, status, validatorId, rejectionReason, error: getErrorMessage(error) },
+        });
         return { success: false, error: error.message || 'Gagal mengubah status peminjaman' };
     }
 }
@@ -92,8 +125,25 @@ export async function deleteLoan(id: number) {
         await LoanService.delete(id);
         revalidatePath('/admin/loans');
         revalidatePath('/admin/inventory');
+        await writeActivityLog({
+            module: 'loans',
+            action: 'delete',
+            entityType: 'item_loan',
+            entityId: id,
+            description: 'Admin menghapus data peminjaman',
+            metadata: { loan: loan[0] },
+        });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({
+            module: 'loans',
+            action: 'delete',
+            entityType: 'item_loan',
+            entityId: id,
+            status: 'failed',
+            description: 'Gagal menghapus data peminjaman',
+            metadata: { error: getErrorMessage(error) },
+        });
         return { success: false, error: error.message || 'Gagal menghapus peminjaman' };
     }
 }
@@ -118,8 +168,25 @@ export async function requestItemReturn(loanId: number, returnPhoto?: string) {
         revalidatePath('/admin/loans');
         revalidatePath('/admin/validations');
         revalidatePath('/admin/dashboard');
+        await writeActivityLog({
+            module: 'loans',
+            action: 'request_return',
+            entityType: 'item_loan',
+            entityId: loanId,
+            description: 'User mengajukan pengembalian alat',
+            metadata: { loanId, hasReturnPhoto: Boolean(returnPhoto), result },
+        });
         return { success: true, ...result };
     } catch (error: any) {
+        await writeActivityLog({
+            module: 'loans',
+            action: 'request_return',
+            entityType: 'item_loan',
+            entityId: loanId,
+            status: 'failed',
+            description: 'Gagal mengajukan pengembalian alat',
+            metadata: { loanId, hasReturnPhoto: Boolean(returnPhoto), error: getErrorMessage(error) },
+        });
         return { success: false, error: error.message || 'Gagal mengajukan pengembalian' };
     }
 }
@@ -135,8 +202,25 @@ export async function approveReturn(loanId: number, validatorId: string) {
         revalidatePath('/admin/validations');
         revalidatePath('/admin/inventory');
         revalidatePath('/student/loans');
+        await writeActivityLog({
+            module: 'loans',
+            action: 'approve_return',
+            entityType: 'item_loan',
+            entityId: loanId,
+            description: 'Admin menyetujui pengembalian alat',
+            metadata: { loanId, validatorId },
+        });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({
+            module: 'loans',
+            action: 'approve_return',
+            entityType: 'item_loan',
+            entityId: loanId,
+            status: 'failed',
+            description: 'Gagal menyetujui pengembalian alat',
+            metadata: { loanId, validatorId, error: getErrorMessage(error) },
+        });
         return { success: false, error: error.message || 'Gagal menyetujui pengembalian' };
     }
 }
@@ -151,8 +235,25 @@ export async function rejectReturn(loanId: number) {
         revalidatePath('/admin/loans');
         revalidatePath('/admin/validations');
         revalidatePath('/student/loans');
+        await writeActivityLog({
+            module: 'loans',
+            action: 'reject_return',
+            entityType: 'item_loan',
+            entityId: loanId,
+            description: 'Admin menolak pengembalian alat',
+            metadata: { loanId },
+        });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({
+            module: 'loans',
+            action: 'reject_return',
+            entityType: 'item_loan',
+            entityId: loanId,
+            status: 'failed',
+            description: 'Gagal menolak pengembalian alat',
+            metadata: { loanId, error: getErrorMessage(error) },
+        });
         return { success: false, error: error.message || 'Gagal menolak pengembalian' };
     }
 }
@@ -169,8 +270,25 @@ export async function adminDirectReturn(loanId: number, validatorId: string) {
         revalidatePath('/admin/inventory');
         revalidatePath('/admin/pengembalian');
         revalidatePath('/student/loans');
+        await writeActivityLog({
+            module: 'loans',
+            action: 'direct_return',
+            entityType: 'item_loan',
+            entityId: loanId,
+            description: 'Admin memproses pengembalian langsung',
+            metadata: { loanId, validatorId },
+        });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({
+            module: 'loans',
+            action: 'direct_return',
+            entityType: 'item_loan',
+            entityId: loanId,
+            status: 'failed',
+            description: 'Gagal memproses pengembalian langsung',
+            metadata: { loanId, validatorId, error: getErrorMessage(error) },
+        });
         return { success: false, error: error.message || 'Gagal memproses pengembalian' };
     }
 }
@@ -226,8 +344,23 @@ export async function requestItemLoan(data: {
         revalidatePath('/admin/loans');
         revalidatePath('/admin/inventory');
         revalidatePath('/items');
+        await writeActivityLog({
+            module: 'loans',
+            action: 'create_qr',
+            entityType: 'item_loan',
+            description: 'User mengajukan peminjaman dari QR item',
+            metadata: data,
+        });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({
+            module: 'loans',
+            action: 'create_qr',
+            entityType: 'item_loan',
+            status: 'failed',
+            description: 'Gagal mengajukan peminjaman dari QR item',
+            metadata: { data, error: getErrorMessage(error) },
+        });
         return { success: false, error: error.message || 'Gagal mengajukan peminjaman' };
     }
 }
@@ -249,66 +382,87 @@ export async function adminManualLoan(data: {
     suratIzin?: string;
     validatorId: string;
 }) {
-    await requirePermission('loans.manage');
-    const { db } = await import('@/db');
-    const { users, roles, itemLoans } = await import('@/db/schema');
-    const { eq, and, desc } = await import('drizzle-orm');
+    try {
+        await requirePermission('loans.manage');
+        const { db } = await import('@/db');
+        const { users, roles, itemLoans } = await import('@/db/schema');
+        const { eq, and, desc } = await import('drizzle-orm');
 
-    // 1. Upsert User
-    const existingUser = await db.query.users.findFirst({
-        where: eq(users.identifier, data.identifier)
-    });
-
-    if (existingUser) {
-        await db.update(users).set({
-            phoneNumber: data.phoneNumber || existingUser.phoneNumber,
-            dosenPembimbing: data.dosenPembimbing || existingUser.dosenPembimbing
-        }).where(eq(users.identifier, data.identifier));
-    } else {
-        const studentRole = await db.query.roles.findFirst({
-            where: eq(roles.name, 'Mahasiswa')
-        });
-        if (!studentRole) throw new Error("Role Mahasiswa not found");
-
-        await db.insert(users).values({
-            identifier: data.identifier,
-            fullName: data.fullName,
-            email: `${data.identifier}@student.uai.ac.id`,
-            roleId: studentRole.id,
-            phoneNumber: data.phoneNumber || null,
-            dosenPembimbing: data.dosenPembimbing || null,
-            status: 'Active'
-        });
-    }
-
-    // 2. Create Loans
-    for (const itemId of data.itemIds) {
-        await LoanService.create({
-            itemId,
-            studentId: data.identifier,
-            purpose: data.purpose,
-            organisasi: data.organisasi,
-            returnPlanDate: data.returnPlanDate,
-            startTime: data.startTime,
-            endTime: data.endTime,
-            suratIzin: data.suratIzin,
-            suratVerified: true
+        // 1. Upsert User
+        const existingUser = await db.query.users.findFirst({
+            where: eq(users.identifier, data.identifier)
         });
 
-        const latestLoan = await db.query.itemLoans.findFirst({
-            where: and(eq(itemLoans.studentId, data.identifier), eq(itemLoans.itemId, itemId)),
-            orderBy: [desc(itemLoans.id)]
-        });
+        if (existingUser) {
+            await db.update(users).set({
+                phoneNumber: data.phoneNumber || existingUser.phoneNumber,
+                dosenPembimbing: data.dosenPembimbing || existingUser.dosenPembimbing
+            }).where(eq(users.identifier, data.identifier));
+        } else {
+            const studentRole = await db.query.roles.findFirst({
+                where: eq(roles.name, 'Mahasiswa')
+            });
+            if (!studentRole) throw new Error("Role Mahasiswa not found");
 
-        if (latestLoan) {
-            await LoanService.updateStatus(latestLoan.id, 'Disetujui', data.validatorId);
+            await db.insert(users).values({
+                identifier: data.identifier,
+                fullName: data.fullName,
+                email: `${data.identifier}@student.uai.ac.id`,
+                roleId: studentRole.id,
+                phoneNumber: data.phoneNumber || null,
+                dosenPembimbing: data.dosenPembimbing || null,
+                status: 'Active'
+            });
         }
+
+        const loanIds: number[] = [];
+
+        // 2. Create Loans
+        for (const itemId of data.itemIds) {
+            await LoanService.create({
+                itemId,
+                studentId: data.identifier,
+                purpose: data.purpose,
+                organisasi: data.organisasi,
+                returnPlanDate: data.returnPlanDate,
+                startTime: data.startTime,
+                endTime: data.endTime,
+                suratIzin: data.suratIzin,
+                suratVerified: true
+            });
+
+            const latestLoan = await db.query.itemLoans.findFirst({
+                where: and(eq(itemLoans.studentId, data.identifier), eq(itemLoans.itemId, itemId)),
+                orderBy: [desc(itemLoans.id)]
+            });
+
+            if (latestLoan) {
+                await LoanService.updateStatus(latestLoan.id, 'Disetujui', data.validatorId);
+                loanIds.push(latestLoan.id);
+            }
+        }
+
+        revalidatePath('/admin/loans');
+        revalidatePath('/admin/validations');
+        revalidatePath('/admin/inventory');
+        revalidatePath('/student/loans');
+        await writeActivityLog({
+            module: 'loans',
+            action: 'manual_create',
+            entityType: 'item_loan',
+            description: 'Admin membuat peminjaman manual',
+            metadata: { ...data, loanIds },
+        });
+        return { success: true };
+    } catch (error) {
+        await writeActivityLog({
+            module: 'loans',
+            action: 'manual_create',
+            entityType: 'item_loan',
+            status: 'failed',
+            description: 'Gagal membuat peminjaman manual',
+            metadata: { data, error: getErrorMessage(error) },
+        });
+        throw error;
     }
-
-    revalidatePath('/admin/loans');
-    revalidatePath('/admin/validations');
-    revalidatePath('/admin/inventory');
-    revalidatePath('/student/loans');
-    return { success: true };
 }
-
