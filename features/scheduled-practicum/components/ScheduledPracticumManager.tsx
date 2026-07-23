@@ -12,6 +12,7 @@ import type { PracticumModuleWithCourse } from '@/features/practicum/types';
 import type { PracticumReportWithDetails } from '@/features/practicum-reports/types';
 import { LecturerPracticumReportTable, AllPracticumLpjManager } from '@/features/practicum-reports/components';
 import ViewportPortal from '@/components/shared/ViewportPortal';
+import { translateError } from '@/lib/error';
 
 interface Room {
     id: number;
@@ -166,7 +167,8 @@ export default function ScheduledPracticumManager({ schedules, courses, modules,
                     setShowForm(false); setEditing(null); setFormDate('');
                 }
             } catch (err: any) {
-                setMessage({ type: 'error', text: 'Gagal menyimpan jadwal' });
+                const { message } = translateError(err, 'Gagal menyimpan jadwal');
+                setMessage({ type: 'error', text: message });
             }
         });
     };
@@ -181,7 +183,10 @@ export default function ScheduledPracticumManager({ schedules, courses, modules,
                 } else {
                     setMessage({ type: 'success', text: 'Jadwal dihapus!' });
                 }
-            } catch { setMessage({ type: 'error', text: 'Gagal menghapus' }); }
+            } catch (err: any) {
+                const { message } = translateError(err, 'Gagal menghapus');
+                setMessage({ type: 'error', text: message });
+            }
         });
     };
 
@@ -213,9 +218,6 @@ export default function ScheduledPracticumManager({ schedules, courses, modules,
                     className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm"
                 >
                     <CalendarRange className="w-4 h-4" />
-                    Jadwal Massal
-                </button>
-            </div>
                     Jadwal Massal
                 </button>
             </div>
