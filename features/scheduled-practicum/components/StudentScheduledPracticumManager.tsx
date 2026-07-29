@@ -12,6 +12,7 @@ import type { PracticumReport } from '@/features/practicum-reports/types';
 import { PracticumReportForm, PracticumReportTable, AllPracticumLpjManager } from '@/features/practicum-reports/components';
 import { useRouter } from 'next/navigation';
 import ViewportPortal from '@/components/shared/ViewportPortal';
+import { translateError } from '@/lib/error';
 
 interface Room {
     id: number;
@@ -166,8 +167,9 @@ export default function StudentScheduledPracticumManager({
                     setMessage({ type: 'success', text: editing ? 'Jadwal berhasil diperbarui!' : 'Jadwal berhasil ditambahkan!' });
                     setShowForm(false); setEditing(null); setFormDate('');
                 }
-            } catch {
-                setMessage({ type: 'error', text: 'Gagal menyimpan jadwal' });
+            } catch (error) {
+                const { message } = translateError(error, 'Gagal menyimpan jadwal');
+                setMessage({ type: 'error', text: message });
             }
         });
     };
@@ -179,7 +181,10 @@ export default function StudentScheduledPracticumManager({
                 const res = await deleteScheduledPracticum(id);
                 if (res?.error) setMessage({ type: 'error', text: res.error });
                 else setMessage({ type: 'success', text: 'Jadwal dihapus!' });
-            } catch { setMessage({ type: 'error', text: 'Gagal menghapus' }); }
+            } catch (error) {
+                const { message } = translateError(error, 'Gagal menghapus');
+                setMessage({ type: 'error', text: message });
+            }
         });
     };
 

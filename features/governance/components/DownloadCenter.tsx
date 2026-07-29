@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { Download, FileText, FileCheck, FileSignature, Search, X, Calendar, User } from 'lucide-react';
 
 interface DownloadDocument {
@@ -128,8 +129,8 @@ export default function DownloadCenter({ documents }: DownloadCenterProps) {
                         return (
                             <div key={doc.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group">
                                 {doc.coverPath && (
-                                    <div className="h-32 bg-gray-100 overflow-hidden">
-                                        <img src={doc.coverPath} alt={doc.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                    <div className="relative h-32 bg-gray-100 overflow-hidden">
+                                        <Image src={doc.coverPath} alt={doc.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
                                     </div>
                                 )}
                                 <div className="p-4">
