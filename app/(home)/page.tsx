@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Navbar from '@/components/layout/Navbar';
 import HeroSection from './_components/HeroSection';
 import QuickStats from './_components/QuickStats';
