@@ -5,6 +5,8 @@ import { Clock, Upload, Users, Building2, GraduationCap } from 'lucide-react';
 import CalendarView from '@/components/shared/CalendarView';
 import { createRoomBooking, getLecturers } from '@/features/bookings/actions';
 import TimeSelect from '@/components/shared/TimeSelect';
+import { useAlert } from '@/components/providers/AlertProvider';
+import { translateError } from '@/lib/error';
 
 interface Room {
     id: number;
@@ -70,6 +72,7 @@ const PURPOSE_TEMPLATES = [
 ];
 
 export default function RoomBookingClient({ rooms, calendarBookings, practicumSchedules = [], userId, userRole }: RoomBookingClientProps) {
+    const { showAlert } = useAlert();
     const [selectedDate, setSelectedDate] = useState<string>('');
     const [selectedRoomId, setSelectedRoomId] = useState<string>('');
     const [startTime, setStartTime] = useState('');
@@ -172,7 +175,7 @@ export default function RoomBookingClient({ rooms, calendarBookings, practicumSc
             // Get final purpose (custom or selected)
             const finalPurpose = selectedPurpose === 'Lainnya' ? customPurpose : selectedPurpose;
 
-            await createRoomBooking({
+            const result = await createRoomBooking({
                 userId,
                 roomId,
                 startTime: startDateTime,
@@ -185,13 +188,19 @@ export default function RoomBookingClient({ rooms, calendarBookings, practicumSc
                 dosenPembimbing: dosenPembimbing || undefined,
             });
 
+            if (!result?.success) {
+                const { title, message } = translateError(result?.error, 'Gagal mengajukan booking.');
+                showAlert({ title, message, type: 'error' });
+                return;
+            }
+
             // Show success message
             const statusMessage = suratPermohonanPath && isVerified
                 ? 'Booking berhasil! Surat terverifikasi, pengajuan langsung disetujui.'
                 : suratPermohonanPath && !isVerified
                     ? 'Booking berhasil diajukan! Surat tidak dapat diverifikasi otomatis dan akan divalidasi manual oleh admin.'
                     : 'Booking berhasil diajukan! Mohon tunggu validasi dari admin.';
-            alert(statusMessage);
+            showAlert({ title: 'Berhasil', message: statusMessage, type: 'success' });
 
             // Reset form
             setSelectedPurpose('');
@@ -209,7 +218,8 @@ export default function RoomBookingClient({ rooms, calendarBookings, practicumSc
             if (fileInput) fileInput.value = '';
         } catch (error) {
             console.error(error);
-            alert('Gagal mengajukan booking.');
+            const { title, message } = translateError(error, 'Gagal mengajukan booking.');
+            showAlert({ title, message, type: 'error' });
         } finally {
             setIsSubmitting(false);
         }
