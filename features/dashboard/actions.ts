@@ -3,6 +3,7 @@
 import { DashboardService } from './service';
 import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/lib/auth';
+import { auditAction } from '@/lib/audit';
 
 export async function getAdminStats() {
     await requirePermission('dashboard.admin');
@@ -18,21 +19,43 @@ export async function getLecturerDashboard(userId: string, showLPJ: boolean = fa
 }
 
 export async function markLoanNotificationRead(loanId: number) {
-    await requirePermission('dashboard.admin');
-    await DashboardService.markLoanNotificationRead(loanId);
-    revalidatePath('/admin/dashboard');
+    return auditAction({
+        module: 'dashboard',
+        action: 'mark_loan_notification_read',
+        entityType: 'item_loan',
+        entityId: loanId,
+        description: 'Admin menandai notifikasi peminjaman sudah dibaca',
+    }, async () => {
+        await requirePermission('dashboard.admin');
+        await DashboardService.markLoanNotificationRead(loanId);
+        revalidatePath('/admin/dashboard');
+    });
 }
 
 export async function markBookingNotificationRead(bookingId: number) {
-    await requirePermission('dashboard.admin');
-    await DashboardService.markBookingNotificationRead(bookingId);
-    revalidatePath('/admin/dashboard');
+    return auditAction({
+        module: 'dashboard',
+        action: 'mark_booking_notification_read',
+        entityType: 'room_booking',
+        entityId: bookingId,
+        description: 'Admin menandai notifikasi booking sudah dibaca',
+    }, async () => {
+        await requirePermission('dashboard.admin');
+        await DashboardService.markBookingNotificationRead(bookingId);
+        revalidatePath('/admin/dashboard');
+    });
 }
 
 export async function markAllNotificationsRead() {
-    await requirePermission('dashboard.admin');
-    await DashboardService.markAllNotificationsRead();
-    revalidatePath('/admin/dashboard');
+    return auditAction({
+        module: 'dashboard',
+        action: 'mark_all_notifications_read',
+        description: 'Admin menandai semua notifikasi sudah dibaca',
+    }, async () => {
+        await requirePermission('dashboard.admin');
+        await DashboardService.markAllNotificationsRead();
+        revalidatePath('/admin/dashboard');
+    });
 }
 
 // Analytics actions - admin only
@@ -70,4 +93,3 @@ export async function getSmartAnalyticsData() {
     await requirePermission('dashboard.admin');
     return DashboardService.getSmartAnalyticsData();
 }
-

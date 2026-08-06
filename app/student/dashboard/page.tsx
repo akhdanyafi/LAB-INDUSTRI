@@ -6,14 +6,17 @@ import { Package, Calendar, Clock, AlertCircle, ArrowRight } from 'lucide-react'
 import Link from 'next/link';
 import StudentScheduleWidget from './_components/StudentScheduleWidget';
 import AttendanceButton from '@/features/attendance/components/AttendanceButton';
+import { getPublishedHitsInfos } from '@/features/hits/actions';
+import HitsInfoSection from '@/features/hits/components/HitsInfoSection';
 
 export default async function StudentDashboard() {
     const session = await getSession();
     if (!session) redirect('/login');
 
-    const [dashboard, schedules] = await Promise.all([
+    const [dashboard, schedules, hitsInfos] = await Promise.all([
         getStudentDashboard(session.user.identifier),
-        getScheduledPracticums()
+        getScheduledPracticums(),
+        getPublishedHitsInfos(3)
     ]);
 
     // Check for overdue items
@@ -151,6 +154,11 @@ export default async function StudentDashboard() {
                     </div>
                 </div>
             </div>
+            {hitsInfos.length > 0 && (
+                <div className="mt-6">
+                    <HitsInfoSection items={hitsInfos} compact />
+                </div>
+            )}
         </div>
     );
 }

@@ -9,12 +9,15 @@ import RoomAttendanceChart from './_components/RoomAttendanceChart';
 import DashboardNotifications from './_components/DashboardNotifications';
 import AttendanceButton from '@/features/attendance/components/AttendanceButton';
 import { getSession } from '@/lib/auth';
+import { getPublishedHitsInfos } from '@/features/hits/actions';
+import HitsInfoSection from '@/features/hits/components/HitsInfoSection';
 
 export default async function AdminDashboard() {
-    const [stats, roomAttendanceStats, pendingUsers] = await Promise.all([
+    const [stats, roomAttendanceStats, pendingUsers, hitsInfos] = await Promise.all([
         getAdminStats(),
         getRoomAttendanceStatsAction(),
-        UserService.getPending()
+        UserService.getPending(),
+        getPublishedHitsInfos(3)
     ]);
 
     const session = await getSession();
@@ -172,7 +175,11 @@ export default async function AdminDashboard() {
                     </div>
                 </div>
             </div>
+            {hitsInfos.length > 0 && (
+                <div className="mt-6">
+                    <HitsInfoSection items={hitsInfos} compact />
+                </div>
+            )}
         </div>
     );
 }
-
