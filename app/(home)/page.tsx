@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Navbar from '@/components/layout/Navbar';
 import HeroSection from './_components/HeroSection';
 import QuickStats from './_components/QuickStats';
@@ -13,6 +15,8 @@ import { getGovernanceDocs } from '@/features/governance/actions';
 import { getTopPublications } from '@/features/publications/actions';
 import { getMaintenanceItems, getAvailableItems, getHomepageStats } from '@/features/inventory/actions';
 import { getModules } from '@/features/practicum/actions';
+import { getPublishedHitsInfos } from '@/features/hits/actions';
+import HitsInfoSection from '@/features/hits/components/HitsInfoSection';
 
 export default async function Home() {
     const today = new Date();
@@ -31,7 +35,8 @@ export default async function Home() {
         availableItems,
         homepageStats,
         modules,
-        practicumSchedules
+        practicumSchedules,
+        hitsInfos
     ] = await Promise.all([
         getAllRooms(),
         getMonthBookings(currentMonth, currentYear),
@@ -44,7 +49,8 @@ export default async function Home() {
         getAvailableItems(),
         getHomepageStats(),
         getModules(),
-        getScheduledPracticumsForCalendar()
+        getScheduledPracticumsForCalendar(),
+        getPublishedHitsInfos()
     ]);
 
     const calendarBookings = [
@@ -58,6 +64,9 @@ export default async function Home() {
             <Navbar />
             <div className="container mx-auto px-4 py-8 space-y-6">
                 <HeroSection />
+
+                {/* Informasi Hits — di bawah galeri foto kegiatan; tetap tampil walau kosong */}
+                <HitsInfoSection items={hitsInfos} />
 
                 {/* Quick Stats */}
                 <QuickStats

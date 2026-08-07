@@ -6,15 +6,18 @@ import { Calendar, FileText, ArrowRight, Download, Package, Clock } from 'lucide
 import Link from 'next/link';
 import StudentScheduleWidget from '@/app/student/dashboard/_components/StudentScheduleWidget';
 import AttendanceButton from '@/features/attendance/components/AttendanceButton';
+import { getPublishedHitsInfos } from '@/features/hits/actions';
+import HitsInfoSection from '@/features/hits/components/HitsInfoSection';
 
 export default async function LecturerDashboard() {
     const session = await getSession();
     if (!session) redirect('/login');
 
     const showLPJ = hasPermission(session, 'governance.view');
-    const [dashboard, schedules] = await Promise.all([
+    const [dashboard, schedules, hitsInfos] = await Promise.all([
         getLecturerDashboard(session.user.identifier, showLPJ),
-        getScheduledPracticumsByLecturerId(session.user.identifier)
+        getScheduledPracticumsByLecturerId(session.user.identifier),
+        getPublishedHitsInfos(3)
     ]);
 
     return (
@@ -218,7 +221,9 @@ export default async function LecturerDashboard() {
                     </div>
                 )}
             </div>
+            <div className="mt-6">
+                <HitsInfoSection items={hitsInfos} compact />
+            </div>
         </div>
     );
 }
-
