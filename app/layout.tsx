@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lab Industri UAI",
-  description: "Website Lab Industri Universitas Al-Azhar Indonesia",
+  title: "Lab Teknik Industri UAI",
+  description: "Website Lab Teknik Industri Universitas Al-Azhar Indonesia",
 };
 
 export default function RootLayout({
@@ -26,12 +26,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} relative isolate min-h-screen antialiased`}
         suppressHydrationWarning
       >
-        <AlertProvider>
-          {children}
-        </AlertProvider>
+        <div className="site-background" aria-hidden="true" />
+        <div className="relative z-10 min-h-screen">
+          <AlertProvider>
+            {children}
+          </AlertProvider>
+        </div>
       </body>
     </html>
   );

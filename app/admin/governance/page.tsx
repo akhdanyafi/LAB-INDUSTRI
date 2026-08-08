@@ -1,6 +1,7 @@
 import { getGovernanceDocs } from '@/features/governance/actions';
 import { getUsers, getRoles, getLecturers } from '@/features/users/actions';
 import { getHeroPhotos } from '@/features/hero-photos/actions';
+import { getHitsInfos, getHitsCategories } from '@/features/hits/actions';
 import { getAllPermissions, getRolePermissionMap } from '@/features/permissions/actions';
 import GovernanceManager from '@/features/governance/components/GovernanceManager';
 import { getSession, hasPermission } from '@/lib/auth';
@@ -11,8 +12,9 @@ export default async function GovernancePage() {
     const canManageGovernance = hasPermission(session, 'governance.manage');
     const canManageUsers = hasPermission(session, 'users.manage');
     const canManageHero = hasPermission(session, 'hero.manage');
+    const canManageHits = hasPermission(session, 'hits.manage');
 
-    const [sops, lpjs, templateSurats, users, roles, lecturers, heroPhotos, allPermissions, rolePermissionMap] = await Promise.all([
+    const [sops, lpjs, templateSurats, users, roles, lecturers, heroPhotos, allPermissions, rolePermissionMap, hitsInfos, hitsCategories] = await Promise.all([
         canManageGovernance ? getGovernanceDocs('SOP') : Promise.resolve([]),
         canManageGovernance ? getGovernanceDocs('LPJ Bulanan') : Promise.resolve([]),
         canManageGovernance ? getGovernanceDocs('Template Surat') : Promise.resolve([]),
@@ -22,6 +24,8 @@ export default async function GovernancePage() {
         canManageHero ? getHeroPhotos() : Promise.resolve([]),
         canManageUsers ? getAllPermissions() : Promise.resolve([]),
         canManageUsers ? getRolePermissionMap() : Promise.resolve({}),
+        canManageHits ? getHitsInfos() : Promise.resolve([]),
+        canManageHits ? getHitsCategories() : Promise.resolve([]),
     ]);
 
     return (
@@ -36,7 +40,9 @@ export default async function GovernancePage() {
             adminId={session?.user.identifier || ''}
             allPermissions={allPermissions}
             rolePermissionMap={rolePermissionMap}
-            permissions={{ canManageGovernance, canManageUsers, canManageHero }}
+            permissions={{ canManageGovernance, canManageUsers, canManageHero, canManageHits }}
+            hitsInfos={hitsInfos as any}
+            hitsCategories={hitsCategories as any}
         />
     );
 }
