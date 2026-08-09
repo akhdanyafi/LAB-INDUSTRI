@@ -7,6 +7,7 @@ import { requirePermission } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { mkdir, unlink, writeFile } from 'fs/promises';
 import { join } from 'path';
+import { writeActivityLog, getErrorMessage } from '@/lib/audit';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const DOWNLOAD_CENTER_TYPE = 'Pusat Download' as const;
@@ -70,8 +71,10 @@ export async function uploadDownloadCenterDoc(formData: FormData) {
         revalidatePath('/lecturer/download-center');
         revalidatePath('/student/download-center');
 
+        await writeActivityLog({ module: 'download_center', action: 'upload_document', entityType: 'download_center_doc', description: 'Admin mengunggah dokumen pusat download', metadata: { title, adminId, fileName: file.name, fileSize: file.size } });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({ module: 'download_center', action: 'upload_document', entityType: 'download_center_doc', status: 'failed', description: 'Gagal mengunggah dokumen pusat download', metadata: { formData, error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal upload dokumen pusat download' };
     }
 }
@@ -99,8 +102,10 @@ export async function deleteDownloadCenterDoc(id: number) {
         revalidatePath('/lecturer/download-center');
         revalidatePath('/student/download-center');
 
+        await writeActivityLog({ module: 'download_center', action: 'delete_document', entityType: 'download_center_doc', entityId: id, description: 'Admin menghapus dokumen pusat download', metadata: { doc } });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({ module: 'download_center', action: 'delete_document', entityType: 'download_center_doc', entityId: id, status: 'failed', description: 'Gagal menghapus dokumen pusat download', metadata: { error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal menghapus dokumen pusat download' };
     }
 }
