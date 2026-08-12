@@ -5,6 +5,7 @@ import { Plus, X, Loader2, Search, Upload } from 'lucide-react';
 import { adminManualLoan } from '@/features/loans/actions';
 import { useAlert } from '@/components/providers/AlertProvider';
 import { translateError } from '@/lib/error';
+import TimeSelect from '@/components/shared/TimeSelect';
 
 const PURPOSE_TEMPLATES = [
     'Praktikum dan Tugas Akhir',
@@ -42,6 +43,8 @@ export default function ManualLoanButton({ items, lecturers, adminId }: ManualLo
     const [customDosen, setCustomDosen] = useState('');
     const [organisasi, setOrganisasi] = useState('Pribadi');
     const [customOrganisasi, setCustomOrganisasi] = useState('');
+    const [startTime, setStartTime] = useState('');
+    const [endTime, setEndTime] = useState('');
     const [suratFile, setSuratFile] = useState<File | null>(null);
 
     const filteredItems = items.filter(i =>
@@ -102,7 +105,7 @@ export default function ManualLoanButton({ items, lecturers, adminId }: ManualLo
             const startDateTime = new Date(`${formData.get('startDate')}T${formData.get('startTime')}`);
             const endDateTime = new Date(`${formData.get('endDate')}T${formData.get('endTime')}`);
 
-            await adminManualLoan({
+            const result = await adminManualLoan({
                 identifier: formData.get('identifier') as string,
                 fullName: formData.get('fullName') as string,
                 phoneNumber: formData.get('phoneNumber') as string || undefined,
@@ -116,6 +119,12 @@ export default function ManualLoanButton({ items, lecturers, adminId }: ManualLo
                 suratIzin: suratPath,
                 validatorId: adminId
             });
+
+            if (!result?.success) {
+                const { title, message } = translateError(result?.error, 'Gagal memproses peminjaman');
+                showAlert({ title, message, type: 'error' });
+                return;
+            }
             setIsOpen(false);
 
             // Reset state
@@ -125,6 +134,8 @@ export default function ManualLoanButton({ items, lecturers, adminId }: ManualLo
             setCustomDosen('');
             setOrganisasi('Pribadi');
             setCustomOrganisasi('');
+            setStartTime('');
+            setEndTime('');
             setSuratFile(null);
             setSelectedItemIds([]);
             showAlert({ title: 'Berhasil', message: 'Peminjaman manual berhasil diproses', type: 'success' });
@@ -212,7 +223,7 @@ export default function ManualLoanButton({ items, lecturers, adminId }: ManualLo
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">Jam Mulai *</label>
-                                                    <input type="time" required name="startTime" className="w-full px-3 py-1.5 rounded-md border text-sm bg-white" />
+                                                    <TimeSelect name="startTime" value={startTime} onChange={setStartTime} required />
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">Rencana Kembali *</label>
@@ -220,7 +231,7 @@ export default function ManualLoanButton({ items, lecturers, adminId }: ManualLo
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">Jam Selesai *</label>
-                                                    <input type="time" required name="endTime" className="w-full px-3 py-1.5 rounded-md border text-sm bg-white" />
+                                                    <TimeSelect name="endTime" value={endTime} onChange={setEndTime} required />
                                                 </div>
                                             </div>
 
