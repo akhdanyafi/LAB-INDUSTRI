@@ -17,6 +17,7 @@ export const items = mysqlTable('items', {
     name: varchar('name', { length: 255 }).notNull(),
     description: text('description'),
     qrCode: varchar('qr_code', { length: 255 }).unique().notNull(),
+    quantity: int('quantity').notNull().default(1),
     status: mysqlEnum('status', ['Tersedia', 'Dipinjam', 'Maintenance']).default('Tersedia'),
 }, (table) => ({
     categoryIdx: index('category_idx').on(table.categoryId),
