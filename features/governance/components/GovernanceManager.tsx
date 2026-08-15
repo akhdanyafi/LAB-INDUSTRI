@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, Users, FileCheck, Image as ImageIcon, FileSignature } from 'lucide-react';
+import { FileText, Users, FileCheck, Image as ImageIcon, FileSignature, Flame } from 'lucide-react';
 import DocumentList from './DocumentList';
 import { deleteGovernanceDoc } from '@/features/governance/actions';
 import GovernanceUploadForm from './GovernanceUploadForm';
@@ -10,6 +10,8 @@ import UserForm from './UserForm';
 import BulkEnrollment from './BulkEnrollment';
 import DataExport from './DataExport';
 import HeroPhotoManager from '@/app/admin/hero-photos/_components/HeroPhotoManager';
+import HitsManager, { HitsInfoAdminItem } from '@/features/hits/components/HitsManager';
+import { HitsCategory } from '@/features/hits/components/HitsCategoryManager';
 
 interface HeroPhoto {
     id: number;
@@ -25,6 +27,7 @@ interface PermissionFlags {
     canManageGovernance: boolean;
     canManageUsers: boolean;
     canManageHero: boolean;
+    canManageHits?: boolean;
 }
 
 interface GovernanceManagerProps {
@@ -39,18 +42,22 @@ interface GovernanceManagerProps {
     allPermissions?: any[];
     rolePermissionMap?: Record<number, string[]>;
     permissions: PermissionFlags;
+    hitsInfos?: HitsInfoAdminItem[];
+    hitsCategories?: HitsCategory[];
 }
 
-type TabType = 'sop' | 'lpj' | 'template-surat' | 'users' | 'hero';
+type TabType = 'sop' | 'lpj' | 'template-surat' | 'users' | 'hero' | 'hits';
 
 export default function GovernanceManager({
     sops, lpjs, templateSurats, users, roles, lecturers, heroPhotos,
     adminId, allPermissions, rolePermissionMap, permissions,
+    hitsInfos = [], hitsCategories = [],
 }: GovernanceManagerProps) {
     const availableTabs: TabType[] = [];
     if (permissions.canManageGovernance) availableTabs.push('sop', 'lpj', 'template-surat');
     if (permissions.canManageUsers) availableTabs.push('users');
     if (permissions.canManageHero) availableTabs.push('hero');
+    if (permissions.canManageHits) availableTabs.push('hits');
 
     const [activeTab, setActiveTab] = useState<TabType>(availableTabs[0] || 'sop');
     const [showUserForm, setShowUserForm] = useState(false);
@@ -139,6 +146,15 @@ export default function GovernanceManager({
                         Hero Section
                     </button>
                 )}
+                {permissions.canManageHits && (
+                    <button
+                        onClick={() => { setActiveTab('hits'); setEditingDoc(null); }}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'hits' ? 'bg-white text-[#0F4C81] shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'}`}
+                    >
+                        <Flame className="w-4 h-4" />
+                        Informasi Hits
+                    </button>
+                )}
             </div>
 
             {/* Content */}
@@ -186,6 +202,10 @@ export default function GovernanceManager({
 
                 {activeTab === 'hero' && permissions.canManageHero && (
                     <HeroPhotoManager initialPhotos={heroPhotos} />
+                )}
+
+                {activeTab === 'hits' && permissions.canManageHits && (
+                    <HitsManager initialInfos={hitsInfos} categories={hitsCategories} />
                 )}
             </div>
         </div>

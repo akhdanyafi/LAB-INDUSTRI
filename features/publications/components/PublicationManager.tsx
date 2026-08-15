@@ -4,6 +4,7 @@ import { useState, useTransition, useMemo } from 'react';
 import { BookOpen, Plus, Trash2, ExternalLink, FileText, Upload, X, Search, Edit, Eye, LayoutGrid, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createPublication, deletePublication, updatePublication } from '@/features/publications/actions';
 import LikeButton from './LikeButton';
+import { translateError } from '@/lib/error';
 
 interface Publication {
     id: number;
@@ -158,8 +159,9 @@ export default function PublicationManager({ publications, userId }: Props) {
                 });
                 setMessage({ type: 'success', text: 'Publikasi berhasil diperbarui!' });
                 setEditingPublication(null);
-            } catch {
-                setMessage({ type: 'error', text: 'Gagal memperbarui publikasi' });
+            } catch (error) {
+                const { message } = translateError(error, 'Gagal memperbarui publikasi');
+                setMessage({ type: 'error', text: message });
             }
         });
     };
@@ -170,8 +172,9 @@ export default function PublicationManager({ publications, userId }: Props) {
             try {
                 await deletePublication(id);
                 setMessage({ type: 'success', text: 'Publikasi dihapus' });
-            } catch {
-                setMessage({ type: 'error', text: 'Gagal menghapus' });
+            } catch (error) {
+                const { message } = translateError(error, 'Gagal menghapus publikasi');
+                setMessage({ type: 'error', text: message });
             }
         });
     };
@@ -229,8 +232,9 @@ export default function PublicationManager({ publications, userId }: Props) {
                 setMessage({ type: 'success', text: 'Publikasi berhasil ditambahkan!' });
                 setSelectedFile(null);
                 (e.target as HTMLFormElement).reset();
-            } catch {
-                setMessage({ type: 'error', text: 'Gagal menambahkan publikasi' });
+            } catch (error) {
+                const { message } = translateError(error, 'Gagal menambahkan publikasi');
+                setMessage({ type: 'error', text: message });
             }
         });
     };
