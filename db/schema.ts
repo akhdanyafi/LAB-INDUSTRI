@@ -5,4 +5,5 @@ export * from './schema/practicum';
 export * from './schema/others';
 export * from './schema/attendance';
 export * from './schema/permissions';
+export * from './schema/activity-logs';
 export * from './schema/hits';
