@@ -42,7 +42,11 @@ export default function ActiveBookingsTable({ bookings, sessionUserId }: ActiveB
 
     const handleApprove = (bookingId: number) => {
         startTransition(async () => {
-            await updateBookingStatus(bookingId, 'Disetujui', sessionUserId);
+            const result = await updateBookingStatus(bookingId, 'Disetujui', sessionUserId);
+            if (!result?.success) {
+                const { title, message } = translateError(result?.error, 'Gagal menyetujui booking');
+                showAlert({ title, message, type: 'error' });
+            }
         });
     };
 
@@ -57,13 +61,13 @@ export default function ActiveBookingsTable({ bookings, sessionUserId }: ActiveB
         setRejectModalOpen(false);
         setRejectingBookingId(null);
         startTransition(async () => {
-            try {
-                await updateBookingStatus(bookingId, 'Ditolak', sessionUserId, reason || undefined);
-                showAlert({ title: 'Berhasil', message: 'Permintaan booking ditolak', type: 'success' });
-            } catch (error: any) {
-                const { title, message } = translateError(error, 'Gagal menolak booking');
+            const result = await updateBookingStatus(bookingId, 'Ditolak', sessionUserId, reason || undefined);
+            if (!result?.success) {
+                const { title, message } = translateError(result?.error, 'Gagal menolak booking');
                 showAlert({ title, message, type: 'error' });
+                return;
             }
+            showAlert({ title: 'Berhasil', message: 'Permintaan booking ditolak', type: 'success' });
         });
     };
 
@@ -76,13 +80,13 @@ export default function ActiveBookingsTable({ bookings, sessionUserId }: ActiveB
         });
         if (confirmed) {
             startTransition(async () => {
-                try {
-                    await deleteBooking(bookingId);
-                    showAlert({ title: 'Berhasil', message: 'Booking berhasil dihapus', type: 'success' });
-                } catch (error: any) {
-                    const { title, message } = translateError(error, 'Gagal menghapus booking');
+                const result = await deleteBooking(bookingId);
+                if (!result?.success) {
+                    const { title, message } = translateError(result?.error, 'Gagal menghapus booking');
                     showAlert({ title, message, type: 'error' });
+                    return;
                 }
+                showAlert({ title: 'Berhasil', message: 'Booking berhasil dihapus', type: 'success' });
             });
         }
     };
