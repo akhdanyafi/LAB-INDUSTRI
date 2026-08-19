@@ -5,6 +5,7 @@ import { Plus, X, Loader2, Upload } from 'lucide-react';
 import { adminManualBooking } from '@/features/bookings/actions';
 import { useAlert } from '@/components/providers/AlertProvider';
 import { translateError } from '@/lib/error';
+import TimeSelect from '@/components/shared/TimeSelect';
 
 const PURPOSE_TEMPLATES = [
     'Penelitian/Riset',
@@ -42,6 +43,8 @@ export default function ManualBookingButton({ rooms, lecturers, adminId }: Manua
     const [organisasi, setOrganisasi] = useState('Pribadi');
     const [customOrganisasi, setCustomOrganisasi] = useState('');
     const [jumlahPeserta, setJumlahPeserta] = useState<number>(1);
+    const [startTime, setStartTime] = useState('');
+    const [endTime, setEndTime] = useState('');
     const [suratFile, setSuratFile] = useState<File | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,7 +92,7 @@ export default function ManualBookingButton({ rooms, lecturers, adminId }: Manua
             const finalPurpose = selectedPurpose === 'Lainnya' ? customPurpose : selectedPurpose;
             const finalOrganisasi = organisasi === 'Lainnya' ? customOrganisasi : organisasi;
 
-            await adminManualBooking({
+            const result = await adminManualBooking({
                 identifier: formData.get('identifier') as string,
                 fullName: formData.get('fullName') as string,
                 phoneNumber: formData.get('phoneNumber') as string || undefined,
@@ -103,6 +106,12 @@ export default function ManualBookingButton({ rooms, lecturers, adminId }: Manua
                 suratPermohonan: suratPath,
                 validatorId: adminId
             });
+
+            if (!result?.success) {
+                const { title, message } = translateError(result?.error, 'Gagal memproses booking');
+                showAlert({ title, message, type: 'error' });
+                return;
+            }
             setIsOpen(false);
 
             // Reset state
@@ -113,6 +122,8 @@ export default function ManualBookingButton({ rooms, lecturers, adminId }: Manua
             setOrganisasi('Pribadi');
             setCustomOrganisasi('');
             setJumlahPeserta(1);
+            setStartTime('');
+            setEndTime('');
             setSuratFile(null);
             showAlert({ title: 'Berhasil', message: 'Booking manual berhasil diproses', type: 'success' });
         } catch (error: any) {
@@ -274,7 +285,7 @@ export default function ManualBookingButton({ rooms, lecturers, adminId }: Manua
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">Jam Mulai *</label>
-                                                    <input type="time" required name="startTime" className="w-full px-3 py-1.5 rounded-md border text-sm bg-white" />
+                                                    <TimeSelect name="startTime" value={startTime} onChange={setStartTime} required />
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">Tanggal Selesai *</label>
@@ -282,7 +293,7 @@ export default function ManualBookingButton({ rooms, lecturers, adminId }: Manua
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">Jam Selesai *</label>
-                                                    <input type="time" required name="endTime" className="w-full px-3 py-1.5 rounded-md border text-sm bg-white" />
+                                                    <TimeSelect name="endTime" value={endTime} onChange={setEndTime} required />
                                                 </div>
                                             </div>
 

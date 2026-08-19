@@ -4,6 +4,8 @@ import { useState, useMemo, useTransition } from 'react';
 import { User, CheckCircle, XCircle, Search, X, MapPin } from 'lucide-react';
 import { updateBookingStatus } from '@/features/bookings/actions';
 import RejectReasonModal from '@/components/ui/RejectReasonModal';
+import { useAlert } from '@/components/providers/AlertProvider';
+import { translateError } from '@/lib/error';
 
 interface Booking {
     id: number;
@@ -26,6 +28,7 @@ interface SearchableBookingsProps {
 }
 
 export default function SearchableBookingsSection({ bookings, sessionUserId }: SearchableBookingsProps) {
+    const { showAlert } = useAlert();
     const [searchQuery, setSearchQuery] = useState('');
     const [isPending, startTransition] = useTransition();
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -52,7 +55,11 @@ export default function SearchableBookingsSection({ bookings, sessionUserId }: S
 
     const handleApprove = (bookingId: number) => {
         startTransition(async () => {
-            await updateBookingStatus(bookingId, 'Disetujui', sessionUserId);
+            const result = await updateBookingStatus(bookingId, 'Disetujui', sessionUserId);
+            if (!result?.success) {
+                const { title, message } = translateError(result?.error, 'Gagal menyetujui booking');
+                showAlert({ title, message, type: 'error' });
+            }
         });
     };
 
@@ -67,7 +74,11 @@ export default function SearchableBookingsSection({ bookings, sessionUserId }: S
         setRejectModalOpen(false);
         setRejectingBookingId(null);
         startTransition(async () => {
-            await updateBookingStatus(bookingId, 'Ditolak', sessionUserId, reason || undefined);
+            const result = await updateBookingStatus(bookingId, 'Ditolak', sessionUserId, reason || undefined);
+            if (!result?.success) {
+                const { title, message } = translateError(result?.error, 'Gagal menolak booking');
+                showAlert({ title, message, type: 'error' });
+            }
         });
     };
 
