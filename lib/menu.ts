@@ -20,6 +20,7 @@ export const ADMIN_PERMISSIONS = [
     'publications.manage',
     'governance.manage',
     'hero.manage',
+    'hits.manage',
     'download-center.manage',
 ];
 
@@ -68,7 +69,7 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     },
     { name: 'Jurnal Publikasi', href: '/admin/publications', iconName: 'BookOpen', permission: 'publications.manage' },
     { name: 'Pusat Download', href: '/admin/download-center', iconName: 'Download', permissions: ['download-center.manage', 'dashboard.admin'] },
-    { name: 'Tata Kelola', href: '/admin/governance', iconName: 'FileText', permissions: ['governance.manage', 'users.manage', 'hero.manage'] },
+    { name: 'Tata Kelola', href: '/admin/governance', iconName: 'FileText', permissions: ['governance.manage', 'users.manage', 'hero.manage', 'hits.manage'] },
 ];
 
 export const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
@@ -76,7 +77,7 @@ export const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
     { name: 'Manajemen Layanan', href: '/manage/validations', iconName: 'ClipboardList', permissions: ['loans.manage', 'bookings.manage', 'users.manage'] },
     { name: 'Manajemen Aset', href: '/manage/inventory', iconName: 'Box', permission: 'inventory.manage' },
     { name: 'Jurnal Publikasi', href: '/manage/publications', iconName: 'BookOpen', permission: 'publications.manage' },
-    { name: 'Tata Kelola', href: '/manage/governance', iconName: 'FileText', permissions: ['governance.manage', 'users.manage', 'hero.manage'] },
+    { name: 'Tata Kelola', href: '/manage/governance', iconName: 'FileText', permissions: ['governance.manage', 'users.manage', 'hero.manage', 'hits.manage'] },
     { name: 'Kelola Pusat Download', href: '/manage/download-center', iconName: 'Download', permissions: ['download-center.manage', 'dashboard.admin'] },
 ];
 
