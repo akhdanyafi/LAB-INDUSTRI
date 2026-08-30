@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Download, FileText, FileCheck, FileSignature, Search, X, Calendar, User } from 'lucide-react';
+import Image from 'next/image';
+import { Download, FileText, FileCheck, FileSignature, ClipboardList, Search, X, Calendar, User } from 'lucide-react';
 
 interface DownloadDocument {
     id: number;
@@ -17,12 +18,13 @@ interface DownloadCenterProps {
     documents: DownloadDocument[];
 }
 
-type FilterType = 'all' | 'SOP' | 'LPJ Bulanan' | 'Template Surat';
+type FilterType = 'all' | 'SOP' | 'LPJ Bulanan' | 'Template Surat' | 'Template Berita Acara';
 
 const typeConfig: Record<string, { icon: typeof FileText; color: string; bg: string }> = {
     'SOP': { icon: FileCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
     'LPJ Bulanan': { icon: FileText, color: 'text-green-600', bg: 'bg-green-50' },
     'Template Surat': { icon: FileSignature, color: 'text-purple-600', bg: 'bg-purple-50' },
+    'Template Berita Acara': { icon: ClipboardList, color: 'text-orange-600', bg: 'bg-orange-50' },
 };
 
 export default function DownloadCenter({ documents }: DownloadCenterProps) {
@@ -44,6 +46,7 @@ export default function DownloadCenter({ documents }: DownloadCenterProps) {
         SOP: documents.filter(d => d.type === 'SOP').length,
         'LPJ Bulanan': documents.filter(d => d.type === 'LPJ Bulanan').length,
         'Template Surat': documents.filter(d => d.type === 'Template Surat').length,
+        'Template Berita Acara': documents.filter(d => d.type === 'Template Berita Acara').length,
     }), [documents]);
 
     const formatDate = (date: Date | string | null) => {
@@ -67,6 +70,7 @@ export default function DownloadCenter({ documents }: DownloadCenterProps) {
                     { key: 'SOP', label: 'SOP', icon: FileCheck },
                     { key: 'LPJ Bulanan', label: 'LPJ Bulanan', icon: FileText },
                     { key: 'Template Surat', label: 'Template Surat', icon: FileSignature },
+                    { key: 'Template Berita Acara', label: 'Template Berita Acara', icon: ClipboardList },
                 ] as const).map(({ key, label, icon: Icon }) => (
                     <button
                         key={key}
@@ -128,8 +132,8 @@ export default function DownloadCenter({ documents }: DownloadCenterProps) {
                         return (
                             <div key={doc.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group">
                                 {doc.coverPath && (
-                                    <div className="h-32 bg-gray-100 overflow-hidden">
-                                        <img src={doc.coverPath} alt={doc.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                    <div className="relative h-32 bg-gray-100 overflow-hidden">
+                                        <Image src={doc.coverPath} alt={doc.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
                                     </div>
                                 )}
                                 <div className="p-4">
