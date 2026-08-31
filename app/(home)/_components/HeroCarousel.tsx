@@ -88,7 +88,7 @@ export default function HeroCarousel({ photos }: { photos: HeroPhoto[] }) {
                             }`}
                     >
                         {photo.link ? (
-                            <a href={photo.link} target="_blank" rel="noopener noreferrer" className="block w-full h-full cursor-pointer">
+                            <a href={photo.link} target="_blank" rel="noopener noreferrer" className="relative block w-full h-full cursor-pointer">
                                 {contentNode}
                             </a>
                         ) : (

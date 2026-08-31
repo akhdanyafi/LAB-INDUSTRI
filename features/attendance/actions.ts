@@ -2,6 +2,7 @@
 
 import { findUserByNim, createAttendance, getAvailableRooms } from './service';
 import type { CheckInResult } from './types';
+import { writeActivityLog, getErrorMessage } from '@/lib/audit';
 
 /**
  * Get all available rooms for the attendance form
@@ -43,6 +44,14 @@ export async function checkIn(
     try {
         // Validate NIM
         if (!nim || nim.trim() === '') {
+            await writeActivityLog({
+                module: 'attendance',
+                action: 'check_in',
+                status: 'failed',
+                entityType: 'lab_attendance',
+                description: 'Absensi gagal: NIM kosong',
+                metadata: { nim, roomId, purpose },
+            });
             return {
                 success: false,
                 error: 'NIM tidak boleh kosong',
@@ -51,6 +60,15 @@ export async function checkIn(
 
         // Validate room
         if (!roomId || roomId <= 0) {
+            await writeActivityLog({
+                module: 'attendance',
+                action: 'check_in',
+                status: 'failed',
+                entityType: 'lab_attendance',
+                description: 'Absensi gagal: ruangan belum dipilih',
+                metadata: { nim, roomId, purpose },
+                actor: { identifier: nim },
+            });
             return {
                 success: false,
                 error: 'Silakan pilih ruangan',
@@ -59,6 +77,15 @@ export async function checkIn(
 
         // Validate purpose
         if (!purpose || purpose.trim() === '') {
+            await writeActivityLog({
+                module: 'attendance',
+                action: 'check_in',
+                status: 'failed',
+                entityType: 'lab_attendance',
+                description: 'Absensi gagal: tujuan belum diisi',
+                metadata: { nim, roomId, purpose },
+                actor: { identifier: nim },
+            });
             return {
                 success: false,
                 error: 'Silakan pilih atau masukkan tujuan',
@@ -69,6 +96,15 @@ export async function checkIn(
         const user = await findUserByNim(nim.trim());
 
         if (!user) {
+            await writeActivityLog({
+                module: 'attendance',
+                action: 'check_in',
+                status: 'failed',
+                entityType: 'lab_attendance',
+                description: 'Absensi gagal: NIM tidak terdaftar',
+                metadata: { nim, roomId, purpose },
+                actor: { identifier: nim },
+            });
             return {
                 success: false,
                 error: 'NIM tidak terdaftar dalam sistem',
@@ -88,12 +124,30 @@ export async function checkIn(
         // Get the latest attendance for this user with details
         const attendance = await getLatestAttendanceForUser(user.identifier);
 
+        await writeActivityLog({
+            module: 'attendance',
+            action: 'check_in',
+            entityType: 'lab_attendance',
+            entityId: attendance?.id,
+            description: 'User melakukan absensi masuk lab',
+            metadata: { nim: user.identifier, roomId, purpose, dosenPenanggungJawab: finalDosenPenanggungJawab },
+            actor: { identifier: user.identifier, fullName: user.fullName },
+        });
         return {
             success: true,
             data: attendance,
         };
     } catch (error) {
         console.error('Check-in error:', error);
+        await writeActivityLog({
+            module: 'attendance',
+            action: 'check_in',
+            entityType: 'lab_attendance',
+            status: 'failed',
+            description: 'Absensi gagal karena error sistem',
+            metadata: { nim, roomId, purpose, dosenPenanggungJawab, error: getErrorMessage(error) },
+            actor: { identifier: nim },
+        });
         return {
             success: false,
             error: 'Terjadi kesalahan saat melakukan absen',
@@ -151,5 +205,4 @@ export async function getRoomAttendanceStatsAction() {
     const { getRoomAttendanceStats } = await import('./service');
     return getRoomAttendanceStats();
 }
-
 

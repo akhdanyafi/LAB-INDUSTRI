@@ -9,7 +9,7 @@ export const governanceDocs = mysqlTable('governance_docs', {
     title: varchar('title', { length: 255 }).notNull(),
     filePath: varchar('file_path', { length: 255 }).notNull(),
     coverPath: varchar('cover_path', { length: 255 }),
-    type: mysqlEnum('type', ['SOP', 'LPJ Bulanan', 'Template Surat', 'Pusat Download']).notNull(),
+    type: mysqlEnum('type', ['SOP', 'LPJ Bulanan', 'Template Surat', 'Pusat Download', 'Template Berita Acara']).notNull(),
     createdAt: datetime('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
     adminIdx: index('admin_idx').on(table.adminId),
