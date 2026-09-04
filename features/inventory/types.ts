@@ -12,6 +12,7 @@ export interface Item {
     name: string;
     description: string | null;
     qrCode: string;
+    quantity: number;
     status: 'Tersedia' | 'Dipinjam' | 'Maintenance';
 }
 
@@ -29,6 +30,7 @@ export interface CreateItemInput {
     name: string;
     description?: string;
     qrCode: string;
+    quantity?: number;
 }
 
 export interface UpdateItemInput {
@@ -37,6 +39,7 @@ export interface UpdateItemInput {
     roomId?: number;
     name?: string;
     description?: string;
+    quantity?: number;
     status?: 'Tersedia' | 'Dipinjam' | 'Maintenance';
 }
 
