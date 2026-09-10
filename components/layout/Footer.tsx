@@ -24,7 +24,7 @@ export default function Footer() {
                                 />
                             </div>
                             <div>
-                                <h3 className="font-bold text-xl leading-none">Lab Industri</h3>
+                                <h3 className="font-bold text-xl leading-none">Lab Teknik Industri</h3>
                                 <span className="text-xs text-blue-200 uppercase tracking-wider">Universitas Al Azhar Indonesia</span>
                             </div>
                         </div>

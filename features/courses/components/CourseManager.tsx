@@ -4,6 +4,7 @@ import { useState, useTransition, useMemo } from 'react';
 import { GraduationCap, Plus, Trash2, Edit, X, Search, User, LayoutGrid, List as ListIcon } from 'lucide-react';
 import { createCourse, updateCourse, deleteCourse, assignLecturerToCourse } from '@/features/courses/actions';
 import type { CourseWithLecturer } from '@/features/courses/types';
+import { translateError } from '@/lib/error';
 
 interface Lecturer {
     identifier: string;
@@ -80,27 +81,32 @@ export default function CourseManager({ courses, lecturers, readOnly = false }: 
 
         startTransition(async () => {
             try {
-                if (editingCourse) {
-                    await updateCourse(editingCourse.id, {
+                const result = editingCourse
+                    ? await updateCourse(editingCourse.id, {
                         code, name,
                         description: description || undefined,
                         sks, semester: semester || undefined,
                         lecturerId: lecturerId ? lecturerId : null,
-                    });
-                    setMessage({ type: 'success', text: 'Mata kuliah berhasil diperbarui!' });
-                } else {
-                    await createCourse({
+                    })
+                    : await createCourse({
                         code, name,
                         description: description || undefined,
                         sks, semester: semester || undefined,
                         lecturerId: lecturerId ? lecturerId : undefined,
                     });
-                    setMessage({ type: 'success', text: 'Mata kuliah berhasil ditambahkan!' });
+
+                if (result?.error) {
+                    const { message } = translateError(result.error, 'Gagal menyimpan mata kuliah');
+                    setMessage({ type: 'error', text: message });
+                    return;
                 }
+
+                setMessage({ type: 'success', text: editingCourse ? 'Mata kuliah berhasil diperbarui!' : 'Mata kuliah berhasil ditambahkan!' });
                 setShowForm(false);
                 setEditingCourse(null);
-            } catch {
-                setMessage({ type: 'error', text: 'Gagal menyimpan mata kuliah' });
+            } catch (error) {
+                const { message } = translateError(error, 'Gagal menyimpan mata kuliah');
+                setMessage({ type: 'error', text: message });
             }
         });
     };
@@ -109,10 +115,16 @@ export default function CourseManager({ courses, lecturers, readOnly = false }: 
         if (!confirm('Hapus mata kuliah ini?')) return;
         startTransition(async () => {
             try {
-                await deleteCourse(id);
+                const result = await deleteCourse(id);
+                if (result?.error) {
+                    const { message } = translateError(result.error, 'Gagal menghapus mata kuliah');
+                    setMessage({ type: 'error', text: message });
+                    return;
+                }
                 setMessage({ type: 'success', text: 'Mata kuliah berhasil dihapus!' });
-            } catch {
-                setMessage({ type: 'error', text: 'Gagal menghapus mata kuliah' });
+            } catch (error) {
+                const { message } = translateError(error, 'Gagal menghapus mata kuliah');
+                setMessage({ type: 'error', text: message });
             }
         });
     };
