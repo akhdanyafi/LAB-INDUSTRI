@@ -28,6 +28,7 @@ export const CreateItemSchema = z.object({
     roomId: z.number().positive('Room ID harus positif'),
     description: z.string().optional(),
     qrCode: z.string().min(1, 'QR Code wajib diisi'),
+    quantity: z.number().int('Jumlah harus berupa bilangan bulat').positive('Jumlah harus lebih dari 0').optional(),
     status: z.enum(['Tersedia', 'Dipinjam', 'Maintenance']),
 });
 
@@ -36,6 +37,7 @@ export const UpdateItemSchema = z.object({
     categoryId: z.number().positive('Category ID harus positif'),
     roomId: z.number().positive('Room ID harus positif'),
     description: z.string().optional(),
+    quantity: z.number().int('Jumlah harus berupa bilangan bulat').positive('Jumlah harus lebih dari 0').optional(),
     status: z.enum(['Tersedia', 'Dipinjam', 'Maintenance']),
 });
 
