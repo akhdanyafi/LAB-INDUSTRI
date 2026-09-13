@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, Users, FileCheck, Image as ImageIcon, FileSignature } from 'lucide-react';
+import { FileText, Users, FileCheck, Image as ImageIcon, FileSignature, Flame, ClipboardList } from 'lucide-react';
 import DocumentList from './DocumentList';
 import { deleteGovernanceDoc } from '@/features/governance/actions';
 import GovernanceUploadForm from './GovernanceUploadForm';
@@ -10,6 +10,8 @@ import UserForm from './UserForm';
 import BulkEnrollment from './BulkEnrollment';
 import DataExport from './DataExport';
 import HeroPhotoManager from '@/app/admin/hero-photos/_components/HeroPhotoManager';
+import HitsManager, { HitsInfoAdminItem } from '@/features/hits/components/HitsManager';
+import { HitsCategory } from '@/features/hits/components/HitsCategoryManager';
 
 interface HeroPhoto {
     id: number;
@@ -25,12 +27,14 @@ interface PermissionFlags {
     canManageGovernance: boolean;
     canManageUsers: boolean;
     canManageHero: boolean;
+    canManageHits?: boolean;
 }
 
 interface GovernanceManagerProps {
     sops: any[];
     lpjs: any[];
     templateSurats: any[];
+    templateBeritaAcaras: any[];
     users: any[];
     roles: any[];
     lecturers: { identifier: string; fullName: string }[];
@@ -39,18 +43,22 @@ interface GovernanceManagerProps {
     allPermissions?: any[];
     rolePermissionMap?: Record<number, string[]>;
     permissions: PermissionFlags;
+    hitsInfos?: HitsInfoAdminItem[];
+    hitsCategories?: HitsCategory[];
 }
 
-type TabType = 'sop' | 'lpj' | 'template-surat' | 'users' | 'hero';
+type TabType = 'sop' | 'lpj' | 'template-surat' | 'template-ba' | 'users' | 'hero' | 'hits';
 
 export default function GovernanceManager({
-    sops, lpjs, templateSurats, users, roles, lecturers, heroPhotos,
+    sops, lpjs, templateSurats, templateBeritaAcaras, users, roles, lecturers, heroPhotos,
     adminId, allPermissions, rolePermissionMap, permissions,
+    hitsInfos = [], hitsCategories = [],
 }: GovernanceManagerProps) {
     const availableTabs: TabType[] = [];
-    if (permissions.canManageGovernance) availableTabs.push('sop', 'lpj', 'template-surat');
+    if (permissions.canManageGovernance) availableTabs.push('sop', 'lpj', 'template-surat', 'template-ba');
     if (permissions.canManageUsers) availableTabs.push('users');
     if (permissions.canManageHero) availableTabs.push('hero');
+    if (permissions.canManageHits) availableTabs.push('hits');
 
     const [activeTab, setActiveTab] = useState<TabType>(availableTabs[0] || 'sop');
     const [showUserForm, setShowUserForm] = useState(false);
@@ -119,6 +127,13 @@ export default function GovernanceManager({
                             <FileSignature className="w-4 h-4" />
                             Template Surat
                         </button>
+                        <button
+                            onClick={() => { setActiveTab('template-ba'); setEditingDoc(null); }}
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'template-ba' ? 'bg-white text-[#0F4C81] shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'}`}
+                        >
+                            <ClipboardList className="w-4 h-4" />
+                            Template Berita Acara
+                        </button>
                     </>
                 )}
                 {permissions.canManageUsers && (
@@ -137,6 +152,15 @@ export default function GovernanceManager({
                     >
                         <ImageIcon className="w-4 h-4" />
                         Hero Section
+                    </button>
+                )}
+                {permissions.canManageHits && (
+                    <button
+                        onClick={() => { setActiveTab('hits'); setEditingDoc(null); }}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'hits' ? 'bg-white text-[#0F4C81] shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'}`}
+                    >
+                        <Flame className="w-4 h-4" />
+                        Informasi Hits
                     </button>
                 )}
             </div>
@@ -165,6 +189,13 @@ export default function GovernanceManager({
                     </>
                 )}
 
+                {activeTab === 'template-ba' && permissions.canManageGovernance && (
+                    <>
+                        <GovernanceUploadForm adminId={adminId} allowedTypes={['Template Berita Acara']} initialData={editingDoc?.type === 'Template Berita Acara' ? editingDoc : null} onCancel={handleCancelEdit} />
+                        <DocumentList documents={templateBeritaAcaras} onEdit={handleEdit} onDelete={deleteGovernanceDoc} />
+                    </>
+                )}
+
                 {activeTab === 'users' && permissions.canManageUsers && (
                     <>
                         {!showUserForm ? (
@@ -186,6 +217,10 @@ export default function GovernanceManager({
 
                 {activeTab === 'hero' && permissions.canManageHero && (
                     <HeroPhotoManager initialPhotos={heroPhotos} />
+                )}
+
+                {activeTab === 'hits' && permissions.canManageHits && (
+                    <HitsManager initialInfos={hitsInfos} categories={hitsCategories} />
                 )}
             </div>
         </div>
