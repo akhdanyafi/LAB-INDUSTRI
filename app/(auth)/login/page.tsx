@@ -66,7 +66,7 @@ function LoginForm() {
                     </h1>
                     {/* Text Sekunder: #6B7280 */}
                     <p className="text-[#6B7280] text-sm">
-                        Portal Lab Industri<br />Universitas Al Azhar Indonesia
+                        Portal Lab Teknik Industri<br />Universitas Al Azhar Indonesia
                     </p>
                 </div>
 
