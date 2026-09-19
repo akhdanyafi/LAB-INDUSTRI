@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import SidebarLink from './SidebarLink';
@@ -24,6 +24,7 @@ import {
     Settings,
     Download,
     Megaphone,
+    Shield,
     type LucideIcon
 } from 'lucide-react';
 
@@ -44,6 +45,7 @@ const iconMap: Record<string, LucideIcon> = {
     Settings,
     Download,
     Megaphone,
+    Shield,
 };
 
 interface MenuItem {
@@ -65,10 +67,57 @@ interface SidebarProps {
     profileHref?: string;
 }
 
+const SIDEBAR_WIDTH_KEY = 'lab-industri-sidebar-width';
+const MIN_SIDEBAR_WIDTH = 220;
+const MAX_SIDEBAR_WIDTH = 420;
+const DEFAULT_SIDEBAR_WIDTH = 256; // 16rem (w-64)
+
 export default function Sidebar({ subtitle, menuItems, user, profileHref }: SidebarProps) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const isResizingRef = useRef(false);
 
     const closeMobileMenu = () => setMobileMenuOpen(false);
+
+    // Restore saved sidebar width on mount
+    useEffect(() => {
+        const saved = window.localStorage.getItem(SIDEBAR_WIDTH_KEY);
+        const parsed = saved ? parseInt(saved, 10) : NaN;
+        const initial = !isNaN(parsed)
+            ? Math.min(Math.max(parsed, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH)
+            : DEFAULT_SIDEBAR_WIDTH;
+        document.documentElement.style.setProperty('--sidebar-width', `${initial}px`);
+    }, []);
+
+    const handleResizeStart = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        isResizingRef.current = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        const onMouseMove = (moveEvent: MouseEvent) => {
+            if (!isResizingRef.current) return;
+            const next = Math.min(Math.max(moveEvent.clientX, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
+            document.documentElement.style.setProperty('--sidebar-width', `${next}px`);
+        };
+
+        const onMouseUp = () => {
+            isResizingRef.current = false;
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            const finalWidth = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width');
+            if (finalWidth) window.localStorage.setItem(SIDEBAR_WIDTH_KEY, parseInt(finalWidth, 10).toString());
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }, []);
+
+    const handleResizeReset = useCallback(() => {
+        document.documentElement.style.setProperty('--sidebar-width', `${DEFAULT_SIDEBAR_WIDTH}px`);
+        window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(DEFAULT_SIDEBAR_WIDTH));
+    }, []);
 
     const getIcon = (iconName: string, className: string = "w-5 h-5") => {
         const IconComponent = iconMap[iconName];
@@ -93,7 +142,7 @@ export default function Sidebar({ subtitle, menuItems, user, profileHref }: Side
                         />
                     </div>
                     <div>
-                        <h1 className="text-lg font-bold text-[#0F4C81] leading-tight">Lab Industri</h1>
+                        <h1 className="text-lg font-bold text-[#0F4C81] leading-tight">Lab Teknik Industri</h1>
                         <p className="text-xs font-medium text-[#6B7280]">{subtitle}</p>
                     </div>
                 </div>
@@ -118,12 +167,22 @@ export default function Sidebar({ subtitle, menuItems, user, profileHref }: Side
             <aside
                 className={`
                     fixed h-full z-50 flex flex-col font-sans bg-white border-r border-gray-200
-                    w-72 lg:w-64
+                    w-72 lg:w-[var(--sidebar-width)]
                     transition-transform duration-300 ease-in-out
                     ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
                     lg:translate-x-0
                 `}
             >
+                {/* Resize Handle (Desktop only) */}
+                <div
+                    onMouseDown={handleResizeStart}
+                    onDoubleClick={handleResizeReset}
+                    className="hidden lg:block absolute top-0 right-0 z-10 h-full w-2 cursor-col-resize select-none group"
+                    title="Tarik untuk mengubah ukuran sidebar (klik dua kali untuk reset)"
+                >
+                    <div className="mx-auto h-full w-px bg-transparent transition-colors group-hover:bg-[#0F4C81]/40 group-active:bg-[#0F4C81]/60" />
+                </div>
+
                 {/* --- HEADER: LOGO & SUBTITLE --- */}
                 <div className="p-6 border-b border-gray-100 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 shadow-sm">
@@ -136,8 +195,11 @@ export default function Sidebar({ subtitle, menuItems, user, profileHref }: Side
                         />
                     </div>
                     <div className="overflow-hidden">
-                        <h1 className="text-lg font-bold text-[#0F4C81] leading-tight truncate">
-                            Lab Industri
+                        <h1
+                            className="font-bold text-[#0F4C81] leading-tight"
+                            style={{ fontSize: 'clamp(1rem, calc(var(--sidebar-width) / 14), 1.875rem)' }}
+                        >
+                            Lab Teknik Industri
                         </h1>
                         <p className="text-xs font-medium text-[#6B7280] truncate mt-0.5">
                             {subtitle}
