@@ -165,6 +165,56 @@ export class PracticumReportService {
     }
 
     /**
+     * Get practicum report by ID with full details for PDF generation:
+     * includes module title and lecturer identifier (NIDN-equivalent) via
+     * joins to scheduled_practicums -> practicum_modules / courses -> users.
+     * Kept separate from getById() so existing callers of getById() are unaffected.
+     */
+    static async getByIdWithDetails(id: number) {
+        const results = await db.execute(sql`
+            SELECT
+                pr.id,
+                pr.scheduled_practicum_id as scheduledPracticumId,
+                pr.created_by as createdBy,
+                pr.course_name as courseName,
+                pr.course_code as courseCode,
+                pr.lecturer_name as lecturerName,
+                pr.room_name as roomName,
+                pr.practicum_date as practicumDate,
+                pr.start_time as startTime,
+                pr.end_time as endTime,
+                pr.batch,
+                pr.attendee_count as attendeeCount,
+                pr.condition as \`condition\`,
+                pr.description,
+                pr.issues,
+                pr.follow_up as followUp,
+                pr.report_status as status,
+                pr.verified_by as verifiedBy,
+                pr.verified_at as verifiedAt,
+                pr.rejection_reason as rejectionReason,
+                pr.created_at as createdAt,
+                pr.updated_at as updatedAt,
+                u1.full_name as createdByName,
+                u2.full_name as verifiedByName,
+                pm.name as moduleName,
+                ulecturer.identifier as lecturerId
+            FROM practicum_reports pr
+            LEFT JOIN users u1 ON pr.created_by = u1.identifier
+            LEFT JOIN users u2 ON pr.verified_by = u2.identifier
+            LEFT JOIN scheduled_practicums sp ON pr.scheduled_practicum_id = sp.id
+            LEFT JOIN practicum_modules pm ON sp.module_id = pm.id
+            LEFT JOIN courses c ON sp.course_id = c.id
+            LEFT JOIN users ulecturer ON c.lecturer_id = ulecturer.identifier
+            WHERE pr.id = ${id}
+            LIMIT 1
+        `);
+
+        const rows = (results as unknown as any[][])[0] as any[];
+        return rows[0] || null;
+    }
+
+    /**
      * Check if a report already exists for a scheduled practicum by a user
      */
     static async existsForUserAndSchedule(userIdentifier: string, scheduledPracticumId: number): Promise<boolean> {
