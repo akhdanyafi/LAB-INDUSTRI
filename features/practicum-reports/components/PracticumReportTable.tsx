@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Eye, Calendar, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { FileText, Eye, Calendar, Clock, CheckCircle, XCircle, AlertCircle, Download } from 'lucide-react';
 import type { PracticumReport, PracticumReportStatus, PracticumCondition } from '@/features/practicum-reports/types';
 import { STATUS_COLORS, CONDITION_COLORS } from '@/features/practicum-reports/types';
 
@@ -95,13 +95,25 @@ export default function PracticumReportTable({ reports }: PracticumReportTablePr
                                     )}
                                 </td>
                                 <td className="py-3 px-4">
-                                    <button
-                                        onClick={() => setSelectedReport(report)}
-                                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                    >
-                                        <Eye className="w-3.5 h-3.5" />
-                                        Detail
-                                    </button>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={() => setSelectedReport(report)}
+                                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                        >
+                                            <Eye className="w-3.5 h-3.5" />
+                                            Detail
+                                        </button>
+                                        {report.status === 'Diverifikasi' && (
+                                            <a
+                                                href={`/api/practicum-reports/${report.id}/download`}
+                                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                title="Unduh PDF Berita Acara"
+                                            >
+                                                <Download className="w-3.5 h-3.5" />
+                                                Unduh PDF
+                                            </a>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -185,7 +197,16 @@ export default function PracticumReportTable({ reports }: PracticumReportTablePr
                                 )}
                             </div>
 
-                            <div className="pt-4 border-t border-gray-100">
+                            <div className="pt-4 border-t border-gray-100 flex items-center gap-3">
+                                {selectedReport.status === 'Diverifikasi' && (
+                                    <a
+                                        href={`/api/practicum-reports/${selectedReport.id}/download`}
+                                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Unduh PDF
+                                    </a>
+                                )}
                                 <button
                                     onClick={() => setSelectedReport(null)}
                                     className="px-6 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
