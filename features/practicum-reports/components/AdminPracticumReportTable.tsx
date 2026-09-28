@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { FileText, Eye, CheckCircle, XCircle, AlertCircle, Trash2, Check, X, AlertTriangle, Calendar, Clock, Users } from 'lucide-react';
+import { FileText, Eye, CheckCircle, XCircle, AlertCircle, Trash2, Check, X, AlertTriangle, Calendar, Clock, Users, Download } from 'lucide-react';
 import type { PracticumReportWithDetails, PracticumReportStatus, PracticumCondition } from '@/features/practicum-reports/types';
 import { STATUS_COLORS, CONDITION_COLORS } from '@/features/practicum-reports/types';
 import { verifyPracticumReport, deletePracticumReport, deleteAllPracticumReports } from '@/features/practicum-reports/actions';
@@ -190,6 +190,15 @@ export default function AdminPracticumReportTable({ reports }: AdminPracticumRep
                                         >
                                             <Eye className="w-3.5 h-3.5" />
                                         </button>
+                                        {report.status === 'Diverifikasi' && (
+                                            <a
+                                                href={`/api/practicum-reports/${report.id}/download`}
+                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                title="Unduh PDF Berita Acara"
+                                            >
+                                                <Download className="w-3.5 h-3.5" />
+                                            </a>
+                                        )}
                                         {(report.status === 'Pending' || report.status === 'Ditolak') && (
                                             <button
                                                 onClick={() => handleVerify(report)}
@@ -304,6 +313,15 @@ export default function AdminPracticumReportTable({ reports }: AdminPracticumRep
                             </div>
 
                             <div className="flex gap-3 pt-4 border-t border-gray-100">
+                                {selectedReport.status === 'Diverifikasi' && (
+                                    <a
+                                        href={`/api/practicum-reports/${selectedReport.id}/download`}
+                                        className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Unduh PDF
+                                    </a>
+                                )}
                                 {(selectedReport.status === 'Pending' || selectedReport.status === 'Ditolak') && (
                                     <button
                                         onClick={() => { handleVerify(selectedReport); setSelectedReport(null); }}
