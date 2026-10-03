@@ -17,7 +17,7 @@ export default async function StudentLayout({
     const menuItems = getMenuForUser(session, STUDENT_MENU_ITEMS, '/student');
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex min-h-screen">
             <Sidebar
                 subtitle="Student Portal"
                 menuItems={menuItems}
@@ -28,7 +28,7 @@ export default async function StudentLayout({
                     initial: session.user.fullName.charAt(0)
                 }}
             />
-            <main className="flex-1 lg:ml-64 pt-20 p-4 lg:p-8">
+            <main className="flex-1 lg:ml-[var(--sidebar-width)] pt-20 p-4 lg:p-8">
                 <SessionRefresher />
                 {children}
             </main>
