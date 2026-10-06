@@ -39,6 +39,8 @@ export default function RegisterForm({ lecturers }: RegisterFormProps) {
     const [studyType, setStudyType] = useState('');
     const [programStudi, setProgramStudi] = useState('Informatika');
     const [dosenPembimbing, setDosenPembimbing] = useState('');
+    const [isExternalDosen, setIsExternalDosen] = useState(false);
+    const [externalDosenName, setExternalDosenName] = useState('');
 
     // Check NIM when user finishes typing
     const handleNIMChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +87,7 @@ export default function RegisterForm({ lecturers }: RegisterFormProps) {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="min-h-screen flex items-center justify-center p-4">
             <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
                 <div className="text-center mb-8">
                     <h1 className="text-2xl font-bold text-gray-900">Pendaftaran Akun</h1>
@@ -192,19 +194,40 @@ export default function RegisterForm({ lecturers }: RegisterFormProps) {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Dosen Pembimbing <span className="text-red-500">*</span></label>
                             <select
-                                name="dosenPembimbing"
                                 required
-                                value={dosenPembimbing}
-                                onChange={(e) => setDosenPembimbing(e.target.value)}
+                                value={isExternalDosen ? '__external__' : dosenPembimbing}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === '__external__') {
+                                        setIsExternalDosen(true);
+                                        setDosenPembimbing('');
+                                    } else {
+                                        setIsExternalDosen(false);
+                                        setExternalDosenName('');
+                                        setDosenPembimbing(val);
+                                    }
+                                }}
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0F4C81] focus:border-transparent outline-none transition-all bg-white"
                             >
                                 <option value="">Pilih Dosen</option>
+                                <option value="__external__">Dari luar prodi</option>
                                 {lecturers.map(lecturer => (
                                     <option key={lecturer.identifier} value={lecturer.fullName}>
                                         {lecturer.fullName}
                                     </option>
                                 ))}
                             </select>
+                            {isExternalDosen && (
+                                <input
+                                    type="text"
+                                    required
+                                    value={externalDosenName}
+                                    onChange={(e) => setExternalDosenName(e.target.value)}
+                                    placeholder="Nama Dosen Pembimbing (Luar Prodi)"
+                                    className="w-full mt-2 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0F4C81] focus:border-transparent outline-none transition-all"
+                                />
+                            )}
+                            <input type="hidden" name="dosenPembimbing" value={isExternalDosen ? externalDosenName : dosenPembimbing} />
                         </div>
                     </div>
 
