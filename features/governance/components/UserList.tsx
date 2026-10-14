@@ -5,6 +5,7 @@ import { Trash2, Edit, User, Search, X, Shield, Check, Loader2, LayoutGrid, List
 import { useState, useMemo, useTransition } from 'react';
 import UserForm from './UserForm';
 import { getUserPermissionOverrides, updateUserPermissions } from '@/features/permissions/actions';
+import { translateError } from '@/lib/error';
 
 interface Permission {
     id: number;
@@ -40,7 +41,8 @@ export default function UserList({ users, roles, lecturers, allPermissions = [],
     const [userOverrides, setUserOverrides] = useState<{ code: string; granted: boolean }[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isPending, startTransition] = useTransition();
-    const [saveMessage, setSaveMessage] = useState('');
+    const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [deleteMessage, setDeleteMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const filteredUsers = useMemo(() => {
         if (!searchQuery) return users;
@@ -67,7 +69,7 @@ export default function UserList({ users, roles, lecturers, allPermissions = [],
         setPermUser(user);
         setIsPermModalOpen(true);
         setIsLoading(true);
-        setSaveMessage('');
+        setSaveMessage(null);
         try {
             const overrides = await getUserPermissionOverrides(user.identifier);
             setUserOverrides(overrides.map(o => ({ code: o.code, granted: o.granted ? true : false })));
@@ -82,7 +84,7 @@ export default function UserList({ users, roles, lecturers, allPermissions = [],
         setIsPermModalOpen(false);
         setPermUser(null);
         setUserOverrides([]);
-        setSaveMessage('');
+        setSaveMessage(null);
     };
 
     const isRoleDefault = (permCode: string): boolean => {
@@ -114,11 +116,23 @@ export default function UserList({ users, roles, lecturers, allPermissions = [],
         startTransition(async () => {
             try {
                 await updateUserPermissions(permUser.identifier, userOverrides);
-                setSaveMessage('Berhasil disimpan! Perubahan akan aktif otomatis saat user membuka halaman berikutnya.');
-            } catch {
-                setSaveMessage('Gagal menyimpan permission.');
+                setSaveMessage({ type: 'success', text: 'Berhasil disimpan! Perubahan akan aktif otomatis saat user membuka halaman berikutnya.' });
+            } catch (error) {
+                const { message } = translateError(error, 'Gagal menyimpan permission.');
+                setSaveMessage({ type: 'error', text: message });
             }
         });
+    };
+
+    const handleDeleteUser = async (identifier: string) => {
+        if (!confirm('Apakah Anda yakin ingin menghapus user ini?')) return;
+        try {
+            await deleteUser(identifier);
+            setDeleteMessage(null);
+        } catch (error) {
+            const { message } = translateError(error, 'Gagal menghapus user');
+            setDeleteMessage({ type: 'error', text: message });
+        }
     };
 
     if (editingUser) {
@@ -180,6 +194,13 @@ export default function UserList({ users, roles, lecturers, allPermissions = [],
                     </div>
                 </div>
 
+                {/* Delete Feedback */}
+                {deleteMessage && (
+                    <div className={`mx-4 mt-4 p-3 rounded-lg text-sm border ${deleteMessage.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
+                        {deleteMessage.text}
+                    </div>
+                )}
+
                 {/* Table View */}
                 <div className={`overflow-x-auto ${viewMode === 'list' ? 'block' : 'hidden'}`}>
                     <table className="min-w-full divide-y divide-gray-200">
@@ -208,6 +229,7 @@ export default function UserList({ users, roles, lecturers, allPermissions = [],
                                 <td className="px-6 py-4">
                                     <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${user.roleName === 'Admin' ? 'bg-purple-50 text-purple-700' :
                                         user.roleName === 'Dosen' ? 'bg-blue-50 text-blue-700' :
+                                        user.roleName === 'Asisten Praktikum' ? 'bg-amber-50 text-amber-700' :
                                             'bg-green-50 text-green-700'
                                         }`}>
                                         {user.roleName}
@@ -229,15 +251,13 @@ export default function UserList({ users, roles, lecturers, allPermissions = [],
                                         >
                                             <Edit className="w-4 h-4" />
                                         </button>
-                                        <form action={async () => {
-                                            if (confirm('Apakah Anda yakin ingin menghapus user ini?')) {
-                                                await deleteUser(user.identifier);
-                                            }
-                                        }}>
-                                            <button className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors" title="Hapus User">
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </form>
+                                        <button
+                                            onClick={() => handleDeleteUser(user.identifier)}
+                                            className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Hapus User"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -271,6 +291,7 @@ export default function UserList({ users, roles, lecturers, allPermissions = [],
                                     <span className={`inline-flex px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
                                         user.roleName === 'Admin' ? 'bg-purple-100 text-purple-700' :
                                         user.roleName === 'Dosen' ? 'bg-blue-100 text-blue-700' :
+                                        user.roleName === 'Asisten Praktikum' ? 'bg-amber-100 text-amber-700' :
                                         'bg-green-100 text-green-700'
                                     }`}>
                                         {user.roleName}
@@ -290,11 +311,7 @@ export default function UserList({ users, roles, lecturers, allPermissions = [],
                                         <Edit className="w-3.5 h-3.5" /> Edit
                                     </button>
                                     <button
-                                        onClick={async () => {
-                                            if (confirm('Apakah Anda yakin ingin menghapus user ini?')) {
-                                                await deleteUser(user.identifier);
-                                            }
-                                        }}
+                                        onClick={() => handleDeleteUser(user.identifier)}
                                         className="flex-1 min-w-[70px] flex justify-center items-center gap-1 text-red-600 bg-red-50 hover:bg-red-100 py-2 rounded-lg text-xs font-semibold transition-colors"
                                     >
                                         <Trash2 className="w-3.5 h-3.5" /> Hapus
@@ -322,6 +339,7 @@ export default function UserList({ users, roles, lecturers, allPermissions = [],
                                 <p className="text-sm text-gray-500 mt-0.5">
                                     {permUser.fullName} — <span className={`font-medium ${permUser.roleName === 'Admin' ? 'text-purple-600' :
                                         permUser.roleName === 'Dosen' ? 'text-blue-600' :
+                                        permUser.roleName === 'Asisten Praktikum' ? 'text-amber-600' :
                                             'text-green-600'
                                         }`}>{permUser.roleName}</span>
                                 </p>
@@ -419,8 +437,8 @@ export default function UserList({ users, roles, lecturers, allPermissions = [],
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50/50">
                             <div>
                                 {saveMessage && (
-                                    <p className={`text-sm ${saveMessage.includes('Gagal') ? 'text-red-600' : 'text-green-600'}`}>
-                                        {saveMessage}
+                                    <p className={`text-sm ${saveMessage.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                                        {saveMessage.text}
                                     </p>
                                 )}
                             </div>

@@ -35,6 +35,9 @@ export function translateError(error: any, defaultMessage: string = 'Terjadi kes
         // Next.js internal redirect error, shouldn't be surfaced as a popup generally, but just in case
         title = 'Memproses...';
         message = 'Mengarahkan halaman...';
+    } else if (rawMessage.includes('Failed query')) {
+        // Avoid leaking raw SQL/driver errors to the user
+        message = defaultMessage;
     }
 
     return { title, message };

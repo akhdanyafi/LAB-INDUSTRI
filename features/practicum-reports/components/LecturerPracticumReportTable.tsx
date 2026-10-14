@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { FileText, Eye, Calendar, Clock, Users, CheckCircle, XCircle, AlertCircle, Check, X, Trash2, AlertTriangle } from 'lucide-react';
+import { FileText, Eye, Calendar, Clock, Users, CheckCircle, XCircle, AlertCircle, Check, X, Trash2, AlertTriangle, Download } from 'lucide-react';
 import type { PracticumReportWithDetails, PracticumReportStatus, PracticumCondition } from '@/features/practicum-reports/types';
 import { lecturerVerifyPracticumReport, lecturerDeletePracticumReport } from '@/features/practicum-reports/actions';
 import { useRouter } from 'next/navigation';
 import ViewportPortal from '@/components/shared/ViewportPortal';
+import ReportSignaturesPanel from './ReportSignaturesPanel';
 
 interface LecturerPracticumReportTableProps {
     reports: PracticumReportWithDetails[];
@@ -164,6 +165,12 @@ export default function LecturerPracticumReportTable({ reports }: LecturerPracti
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <span className="text-sm text-gray-900">{report.createdByName || report.createdBy}</span>
+                                    {report.partnerId && (
+                                        <div className="text-xs text-gray-500">+ {report.partnerName || report.partnerId}</div>
+                                    )}
+                                    <div className={`text-[11px] ${Number(report.hasSignature) ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                        {Number(report.hasSignature) ? '✓ TTD asprak' : 'Belum TTD asprak'}
+                                    </div>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <span className="text-sm text-gray-900">{report.roomName}</span>
@@ -193,6 +200,15 @@ export default function LecturerPracticumReportTable({ reports }: LecturerPracti
                                         <button onClick={() => setSelectedReport(report)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Lihat Detail">
                                             <Eye className="w-4 h-4" />
                                         </button>
+                                        {report.status === 'Diverifikasi' && (
+                                            <a
+                                                href={`/api/practicum-reports/${report.id}/download`}
+                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                title="Unduh PDF Berita Acara"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                            </a>
+                                        )}
                                         {(report.status === 'Pending' || !report.status) && (
                                             <>
                                                 <button onClick={() => handleVerify(report)} disabled={isPending} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50" title="Verifikasi">
@@ -252,8 +268,16 @@ export default function LecturerPracticumReportTable({ reports }: LecturerPracti
                                         <span className="font-medium">{selectedReport.createdByName}</span>
                                         <span className="text-gray-500 ml-2">({selectedReport.createdBy})</span>
                                     </p>
+                                    {selectedReport.partnerId && (
+                                        <p className="text-sm text-gray-900 mt-1">
+                                            <span className="text-gray-500">Partner asprak: </span>
+                                            <span className="font-medium">{selectedReport.partnerName || selectedReport.partnerId}</span>
+                                            <span className="text-gray-500 ml-2">({selectedReport.partnerId})</span>
+                                        </p>
+                                    )}
                                     <p className="text-xs text-gray-500 mt-1">Dibuat pada: {formatDateTime(selectedReport.createdAt)}</p>
                                 </div>
+                                <ReportSignaturesPanel reportId={selectedReport.id} status={selectedReport.status} />
                                 <div className="bg-gray-50 rounded-lg p-4">
                                     <h4 className="text-sm font-semibold text-gray-700 mb-3">Informasi Jadwal</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -283,6 +307,13 @@ export default function LecturerPracticumReportTable({ reports }: LecturerPracti
                                             <div>
                                                 <span className="text-gray-500">Ruang Lab</span>
                                                 <p className="font-medium text-gray-900">{selectedReport.roomName}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-2 text-sm md:col-span-2">
+                                            <FileText className="w-4 h-4 text-blue-500 mt-0.5" />
+                                            <div>
+                                                <span className="text-gray-500">Modul yang Digunakan</span>
+                                                <p className="font-medium text-gray-900">{selectedReport.moduleTitle || '-'}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -329,6 +360,15 @@ export default function LecturerPracticumReportTable({ reports }: LecturerPracti
                                 </div>
                             </div>
                             <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-2">
+                                {selectedReport.status === 'Diverifikasi' && (
+                                    <a
+                                        href={`/api/practicum-reports/${selectedReport.id}/download`}
+                                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Unduh PDF
+                                    </a>
+                                )}
                                 {(selectedReport.status === 'Pending' || !selectedReport.status) && (
                                     <>
                                         <button onClick={() => handleVerify(selectedReport)} disabled={isPending} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50">

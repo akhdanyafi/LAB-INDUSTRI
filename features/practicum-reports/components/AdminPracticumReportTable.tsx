@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { FileText, Eye, CheckCircle, XCircle, AlertCircle, Trash2, Check, X, AlertTriangle, Calendar, Clock, Users } from 'lucide-react';
+import { FileText, Eye, CheckCircle, XCircle, AlertCircle, Trash2, Check, X, AlertTriangle, Calendar, Clock, Users, Download } from 'lucide-react';
 import type { PracticumReportWithDetails, PracticumReportStatus, PracticumCondition } from '@/features/practicum-reports/types';
 import { STATUS_COLORS, CONDITION_COLORS } from '@/features/practicum-reports/types';
 import { verifyPracticumReport, deletePracticumReport, deleteAllPracticumReports } from '@/features/practicum-reports/actions';
 import { useRouter } from 'next/navigation';
+import ReportSignaturesPanel from './ReportSignaturesPanel';
 
 interface AdminPracticumReportTableProps {
     reports: PracticumReportWithDetails[];
@@ -169,6 +170,9 @@ export default function AdminPracticumReportTable({ reports }: AdminPracticumRep
                                 </td>
                                 <td className="py-3 px-4">
                                     <p className="text-sm text-gray-700">{report.createdByName || report.createdBy}</p>
+                                    {report.partnerId && (
+                                        <p className="text-xs text-gray-500">+ {report.partnerName || report.partnerId}</p>
+                                    )}
                                 </td>
                                 <td className="py-3 px-4">
                                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${CONDITION_COLORS[report.condition as PracticumCondition] || 'bg-gray-100 text-gray-700'}`}>
@@ -180,6 +184,9 @@ export default function AdminPracticumReportTable({ reports }: AdminPracticumRep
                                         <StatusIcon status={report.status as PracticumReportStatus | null} />
                                         {report.status || 'Pending'}
                                     </span>
+                                    <span className={`mt-1 block text-[11px] ${Number(report.hasSignature) ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                        {Number(report.hasSignature) ? '✓ TTD asprak' : 'Belum TTD asprak'}
+                                    </span>
                                 </td>
                                 <td className="py-3 px-4">
                                     <div className="flex items-center gap-1">
@@ -190,6 +197,15 @@ export default function AdminPracticumReportTable({ reports }: AdminPracticumRep
                                         >
                                             <Eye className="w-3.5 h-3.5" />
                                         </button>
+                                        {report.status === 'Diverifikasi' && (
+                                            <a
+                                                href={`/api/practicum-reports/${report.id}/download`}
+                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                title="Unduh PDF Berita Acara"
+                                            >
+                                                <Download className="w-3.5 h-3.5" />
+                                            </a>
+                                        )}
                                         {(report.status === 'Pending' || report.status === 'Ditolak') && (
                                             <button
                                                 onClick={() => handleVerify(report)}
@@ -271,8 +287,14 @@ export default function AdminPracticumReportTable({ reports }: AdminPracticumRep
                                     <div><span className="text-gray-500">Ruangan:</span> <span className="font-medium">{selectedReport.roomName}</span></div>
                                     <div><span className="text-gray-500">Dosen:</span> <span className="font-medium">{selectedReport.lecturerName || '-'}</span></div>
                                     <div><span className="text-gray-500">Pengisi:</span> <span className="font-medium">{selectedReport.createdByName || selectedReport.createdBy}</span></div>
+                                    {selectedReport.partnerId && (
+                                        <div><span className="text-gray-500">Partner asprak:</span> <span className="font-medium">{selectedReport.partnerName || selectedReport.partnerId}</span></div>
+                                    )}
+                                    <div className="col-span-2"><span className="text-gray-500">Modul yang digunakan:</span> <span className="font-medium">{selectedReport.moduleTitle || '-'}</span></div>
                                 </div>
                             </div>
+
+                            <ReportSignaturesPanel reportId={selectedReport.id} status={selectedReport.status} />
 
                             <div className="space-y-3">
                                 <div className="grid grid-cols-2 gap-3 text-sm">
@@ -304,6 +326,15 @@ export default function AdminPracticumReportTable({ reports }: AdminPracticumRep
                             </div>
 
                             <div className="flex gap-3 pt-4 border-t border-gray-100">
+                                {selectedReport.status === 'Diverifikasi' && (
+                                    <a
+                                        href={`/api/practicum-reports/${selectedReport.id}/download`}
+                                        className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Unduh PDF
+                                    </a>
+                                )}
                                 {(selectedReport.status === 'Pending' || selectedReport.status === 'Ditolak') && (
                                     <button
                                         onClick={() => { handleVerify(selectedReport); setSelectedReport(null); }}

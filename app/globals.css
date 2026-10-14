@@ -5,20 +5,87 @@
   --foreground: #1F2937;
   --primary: #0F4C81;
   --primary-hover: #0a3a63;
+  --sidebar-width: 16rem;
+  /* Latar situs: 2 warna identitas LAB TEKNIK INDUSTRI — abu-abu & biru */
+  --site-bg-gray: #94A3B8;
+  --site-bg-blue: #1D4ED8;
+  --site-bg-top: #E2E8F0;
+  --site-bg-mid: #7C8FA8;
+  --site-bg-bottom: #143C86;
 }
 
 html,
 body {
-  background-color: var(--background);
+  min-height: 100%;
+}
+
+body {
+  background-color: transparent;
   color: #1F2937;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Force all full-page wrappers to use gray background consistently */
-.min-h-screen {
-  background-color: var(--background);
+/* ============================
+   Latar belakang situs (abu-abu + biru)
+   ============================ */
+.site-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    /* BIRU — sudut kanan atas */
+    radial-gradient(circle at 100% -4%, rgba(29, 78, 216, 0.92) 0%, rgba(29, 78, 216, 0.45) 22%, rgba(29, 78, 216, 0) 46%),
+    /* ABU-ABU — sudut kiri bawah */
+    radial-gradient(circle at 0% 100%, rgba(148, 163, 184, 0.9) 0%, rgba(148, 163, 184, 0.42) 22%, rgba(148, 163, 184, 0) 48%),
+    /* ABU-ABU — sapuan kiri atas */
+    radial-gradient(circle at 6% 6%, rgba(203, 213, 225, 0.6) 0%, rgba(203, 213, 225, 0) 34%),
+    /* BIRU — sapuan kanan bawah */
+    radial-gradient(circle at 96% 96%, rgba(20, 60, 134, 0.62) 0%, rgba(20, 60, 134, 0) 36%),
+    /* BIRU — inti tengah */
+    radial-gradient(circle at 50% 52%, rgba(37, 99, 235, 0.6) 0%, rgba(37, 99, 235, 0.26) 30%, rgba(37, 99, 235, 0) 58%),
+    linear-gradient(
+      168deg,
+      var(--site-bg-top) 0%,
+      #C7D0DC 16%,
+      var(--site-bg-gray) 34%,
+      var(--site-bg-mid) 52%,
+      #3F6FC4 72%,
+      var(--site-bg-blue) 86%,
+      var(--site-bg-bottom) 100%
+    );
+}
+
+.site-background::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.34;
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml,%3Csvg width='1440' height='1440' viewBox='0 0 1440 1440' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='%23FFFFFF' stroke-opacity='0.18' stroke-width='2'%3E%3Cpath d='M28 582L272 604L416 1018L864 970L1148 618L1298 950'/%3E%3Cpath d='M614 202L1180 270L1330 770L734 986L802 526L614 202Z'/%3E%3Cpath d='M784 686L1122 754L930 1050L784 686Z'/%3E%3Cpath d='M982 76L1112 416L1288 108'/%3E%3Cpath d='M0 127L0 0H226L556 0L868 0L1148 0L1440 0V104'/%3E%3C/g%3E%3Cg fill='%23FFFFFF' fill-opacity='0.2'%3E%3Ccircle cx='26' cy='580' r='26'/%3E%3Ccircle cx='168' cy='1132' r='18'/%3E%3Ccircle cx='614' cy='544' r='18'/%3E%3Ccircle cx='790' cy='386' r='18'/%3E%3Ccircle cx='874' cy='1080' r='28'/%3E%3Ccircle cx='1042' cy='934' r='20'/%3E%3Ccircle cx='1218' cy='482' r='22'/%3E%3Ccircle cx='1316' cy='734' r='20'/%3E%3Ccircle cx='1422' cy='718' r='24'/%3E%3Ccircle cx='1128' cy='118' r='14'/%3E%3C/g%3E%3Cg stroke='%23FFFFFF' stroke-opacity='0.12' stroke-width='8'%3E%3Cpath d='M48 34H168L232 106V214L136 270L36 210V108L48 34Z'/%3E%3Cpath d='M286 76H390L444 142V236L366 292L274 238V142L286 76Z'/%3E%3C/g%3E%3Cg fill='%23FFFFFF' fill-opacity='0.95'%3E%3Cpath d='M738 186L752 220L786 234L752 248L738 282L724 248L690 234L724 220L738 186Z'/%3E%3Cpath d='M786 210L794 228L812 236L794 244L786 262L778 244L760 236L778 228L786 210Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: center;
+}
+
+.site-background::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 74% 13%, rgba(255,255,255,0.16), transparent 1.1rem),
+    radial-gradient(circle at 56% 56%, rgba(255,255,255,0.13), transparent 1.3rem),
+    radial-gradient(circle at 82% 33%, rgba(255,255,255,0.13), transparent 1.2rem),
+    radial-gradient(circle at 2% 42%, rgba(255,255,255,0.12), transparent 1.5rem),
+    radial-gradient(circle at 97% 53%, rgba(255,255,255,0.14), transparent 1.2rem),
+    radial-gradient(circle at 11% 72%, rgba(255,255,255,0.1), transparent 1rem),
+    radial-gradient(circle at 70% 93%, rgba(255,255,255,0.12), transparent 1.3rem);
+  opacity: 0.9;
 }
 
 /* Utility classes */

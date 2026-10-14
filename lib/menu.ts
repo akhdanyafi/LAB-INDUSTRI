@@ -1,5 +1,12 @@
 import { hasAnyPermission, hasPermission } from '@/lib/auth';
 
+// Role yang memakai portal /student (Mahasiswa + Asisten Praktikum)
+export const STUDENT_PORTAL_ROLES = ['Mahasiswa', 'Asisten Praktikum'];
+
+export function isStudentPortalRole(role?: string): boolean {
+    return !!role && STUDENT_PORTAL_ROLES.includes(role);
+}
+
 export interface MenuItem {
     name: string;
     href: string;
@@ -20,6 +27,7 @@ export const ADMIN_PERMISSIONS = [
     'publications.manage',
     'governance.manage',
     'hero.manage',
+    'hits.manage',
     'download-center.manage',
 ];
 
@@ -32,6 +40,7 @@ export const STUDENT_MENU_ITEMS: MenuItem[] = [
         children: [
             { name: 'Mata Kuliah', href: '/student/courses', iconName: 'GraduationCap' },
             { name: 'Modul Praktikum', href: '/student/practicum', iconName: 'BookOpen' },
+            { name: 'Evaluasi Praktikum', href: '/student/evaluation', iconName: 'ClipboardList' },
         ],
     },
     { name: 'Publikasi', href: '/student/publications', iconName: 'FileText' },
@@ -48,6 +57,7 @@ export const LECTURER_MENU_ITEMS: MenuItem[] = [
             { name: 'Mata Kuliah', href: '/lecturer/courses', iconName: 'Book' },
             { name: 'Modul Praktikum', href: '/lecturer/modules', iconName: 'FileText' },
             { name: 'Jadwal Praktikum', href: '/lecturer/schedules', iconName: 'Calendar' },
+            { name: 'Evaluasi Praktikum', href: '/lecturer/manage/evaluation', iconName: 'ClipboardList' },
         ],
     },
     { name: 'Publikasi', href: '/lecturer/publications', iconName: 'BookOpen' },
@@ -59,16 +69,17 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
     { name: 'Manajemen Layanan', href: '/admin/validations', iconName: 'ClipboardList', permissions: ['loans.manage', 'bookings.manage', 'users.manage'] },
     { name: 'Manajemen Aset', href: '/admin/inventory', iconName: 'Box', permission: 'inventory.manage' },
     {
-        name: 'Akademik', href: '#', iconName: 'GraduationCap', permissions: ['courses.manage', 'practicum.manage'],
+        name: 'Akademik', href: '#', iconName: 'GraduationCap', permissions: ['courses.manage', 'practicum.manage', 'evaluation.manage'],
         children: [
             { name: 'Kelola Mata Kuliah', href: '/admin/courses', iconName: 'GraduationCap', permission: 'courses.manage' },
             { name: 'Kelola Modul Praktikum', href: '/admin/practicum', iconName: 'BookOpen', permission: 'practicum.manage' },
             { name: 'Kelola Jadwal Praktikum', href: '/admin/scheduled-practicum', iconName: 'Calendar', permission: 'practicum.manage' },
+            { name: 'Evaluasi Praktikum', href: '/admin/evaluation', iconName: 'ClipboardList', permission: 'evaluation.manage' },
         ],
     },
     { name: 'Jurnal Publikasi', href: '/admin/publications', iconName: 'BookOpen', permission: 'publications.manage' },
     { name: 'Pusat Download', href: '/admin/download-center', iconName: 'Download', permissions: ['download-center.manage', 'dashboard.admin'] },
-    { name: 'Tata Kelola', href: '/admin/governance', iconName: 'FileText', permissions: ['governance.manage', 'users.manage', 'hero.manage'] },
+    { name: 'Tata Kelola', href: '/admin/governance', iconName: 'FileText', permissions: ['governance.manage', 'users.manage', 'hero.manage', 'hits.manage'] },
 ];
 
 export const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
@@ -76,7 +87,7 @@ export const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
     { name: 'Manajemen Layanan', href: '/manage/validations', iconName: 'ClipboardList', permissions: ['loans.manage', 'bookings.manage', 'users.manage'] },
     { name: 'Manajemen Aset', href: '/manage/inventory', iconName: 'Box', permission: 'inventory.manage' },
     { name: 'Jurnal Publikasi', href: '/manage/publications', iconName: 'BookOpen', permission: 'publications.manage' },
-    { name: 'Tata Kelola', href: '/manage/governance', iconName: 'FileText', permissions: ['governance.manage', 'users.manage', 'hero.manage'] },
+    { name: 'Tata Kelola', href: '/manage/governance', iconName: 'FileText', permissions: ['governance.manage', 'users.manage', 'hero.manage', 'hits.manage'] },
     { name: 'Kelola Pusat Download', href: '/manage/download-center', iconName: 'Download', permissions: ['download-center.manage', 'dashboard.admin'] },
 ];
 

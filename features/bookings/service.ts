@@ -57,10 +57,16 @@ export class BookingService {
      * Uses user's dosenPembimbing as fallback if not provided (only for students)
      */
     static async create(data: CreateBookingInput) {
-        // Check for conflicts with scheduled practicums
-        const bookingDay = data.startTime.getDay();
-        // Convert JS day (0=Sunday) to our format (0=Senin)
-        const dayOfWeek = bookingDay === 0 ? 6 : bookingDay - 1;
+        // Check for conflicts with scheduled practicums.
+        // Each scheduled practicum is materialised as its own row with a concrete
+        // scheduledDate, so only schedules falling on the SAME calendar date as the
+        // booking can conflict — matching on dayOfWeek alone would block that weekday
+        // forever, including dates long after the practicum has passed.
+        const startOfDay = new Date(data.startTime);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(data.startTime);
+        endOfDay.setHours(23, 59, 59, 999);
+
         const bookingStartStr = `${String(data.startTime.getHours()).padStart(2, '0')}:${String(data.startTime.getMinutes()).padStart(2, '0')}`;
         const bookingEndStr = `${String(data.endTime.getHours()).padStart(2, '0')}:${String(data.endTime.getMinutes()).padStart(2, '0')}`;
 
@@ -69,16 +75,17 @@ export class BookingService {
             .from(scheduledPracticums)
             .where(and(
                 eq(scheduledPracticums.roomId, data.roomId),
-                eq(scheduledPracticums.dayOfWeek, dayOfWeek),
-                eq(scheduledPracticums.status, 'Aktif')
+                eq(scheduledPracticums.status, 'Aktif'),
+                gte(scheduledPracticums.scheduledDate, startOfDay),
+                lte(scheduledPracticums.scheduledDate, endOfDay)
             ));
 
-        const hasConflict = conflictingSchedules.some(s =>
+        const conflict = conflictingSchedules.find(s =>
             bookingStartStr < s.endTime && bookingEndStr > s.startTime
         );
 
-        if (hasConflict) {
-            throw new Error('Ruangan tidak tersedia: sudah dijadwalkan untuk praktikum terjadwal pada waktu tersebut');
+        if (conflict) {
+            throw new Error(`Ruangan tidak tersedia: sudah dijadwalkan untuk praktikum terjadwal pada pukul ${conflict.startTime}-${conflict.endTime}`);
         }
 
         // Auto-validate if surat permohonan is provided AND verified
@@ -184,6 +191,19 @@ export class BookingService {
                 rejectionReason: status === 'Ditolak' ? (rejectionReason || null) : null
             })
             .where(eq(roomBookings.id, bookingId));
+    }
+
+    /**
+     * Mark an approved booking as finished (room no longer in use).
+     * The booking drops off the calendar but stays in history.
+     */
+    static async markCompleted(bookingId: number) {
+        const [result] = await db.update(roomBookings)
+            .set({ status: 'Selesai' })
+            .where(and(eq(roomBookings.id, bookingId), eq(roomBookings.status, 'Disetujui')));
+        if (result.affectedRows === 0) {
+            throw new Error('Booking tidak ditemukan atau belum disetujui');
+        }
     }
 
     /**
