@@ -4,9 +4,9 @@
  */
 
 import { db } from '@/db';
-import { scheduledPracticums, courses, practicumModules, users, roomBookings } from '@/db/schema';
+import { scheduledPracticums, courses, practicumModules, users, roomBookings, practicumReports, practicumLpjDocs } from '@/db/schema';
 import { rooms } from '@/db/schema';
-import { eq, and, desc, gte, lte } from 'drizzle-orm';
+import { eq, and, desc, gte, lte, inArray, count } from 'drizzle-orm';
 import type { CreateScheduledPracticumInput, UpdateScheduledPracticumInput } from './types';
 
 /**
@@ -262,5 +262,48 @@ export class ScheduledPracticumService {
      */
     static async delete(id: number) {
         await db.delete(scheduledPracticums).where(eq(scheduledPracticums.id, id));
+    }
+
+    /**
+     * Find schedules matching a bulk-delete filter, with the number of
+     * berita acara / LPJ that would be cascade-deleted alongside them.
+     */
+    static async findForBulkDelete(filter: {
+        courseId: number;
+        roomId?: number;
+        daysOfWeek: number[];
+        periodStart: Date;
+        periodEnd: Date;
+    }) {
+        const conditions = [
+            eq(scheduledPracticums.courseId, filter.courseId),
+            inArray(scheduledPracticums.dayOfWeek, filter.daysOfWeek),
+            gte(scheduledPracticums.scheduledDate, filter.periodStart),
+            lte(scheduledPracticums.scheduledDate, filter.periodEnd),
+        ];
+        if (filter.roomId) {
+            conditions.push(eq(scheduledPracticums.roomId, filter.roomId));
+        }
+
+        const rows = await db
+            .select({ id: scheduledPracticums.id })
+            .from(scheduledPracticums)
+            .where(and(...conditions));
+        const ids = rows.map((r) => r.id);
+        if (ids.length === 0) return { ids, reportCount: 0, lpjCount: 0 };
+
+        const [[reports], [lpj]] = await Promise.all([
+            db.select({ n: count() }).from(practicumReports).where(inArray(practicumReports.scheduledPracticumId, ids)),
+            db.select({ n: count() }).from(practicumLpjDocs).where(inArray(practicumLpjDocs.scheduledPracticumId, ids)),
+        ]);
+        return { ids, reportCount: reports.n, lpjCount: lpj.n };
+    }
+
+    /**
+     * Delete many schedules at once (reports/LPJ cascade via FK)
+     */
+    static async deleteMany(ids: number[]) {
+        if (ids.length === 0) return;
+        await db.delete(scheduledPracticums).where(inArray(scheduledPracticums.id, ids));
     }
 }

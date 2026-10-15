@@ -9,6 +9,7 @@ export interface PracticumReport {
     id: number;
     scheduledPracticumId: number;
     createdBy: string;
+    partnerId: string | null;
 
     // Snapshot data dari jadwal
     courseName: string;
@@ -35,10 +36,20 @@ export interface PracticumReport {
 
     createdAt: Date | null;
     updatedAt: Date | null;
+
+    /** Modul yang digunakan saat mengajar. */
+    moduleId?: number | null;
+    moduleTitle?: string | null;
+
+    /** Sudah ada tanda tangan asprak pengisi (gambar tidak ikut dikirim di daftar). */
+    hasSignature?: boolean;
+    /** User yang sedang login adalah asprak pengisi (boleh menyisipkan/mengubah TTD). */
+    canSign?: boolean;
 }
 
 export interface PracticumReportWithDetails extends PracticumReport {
     createdByName: string | null;
+    partnerName: string | null;
     verifiedByName: string | null;
 }
 
@@ -61,6 +72,26 @@ export interface CreatePracticumReportInput {
     description: string;
     issues?: string;
     followUp?: string;
+    partnerId?: string | null;
+    /** Modul yang digunakan (id modul MK, atau judul yang ditulis sendiri). */
+    moduleId?: number | null;
+    moduleTitle?: string | null;
+    /** Tanda tangan asprak pengisi (data URL gambar); boleh kosong lalu disisipkan kemudian. */
+    assistantSignature?: string | null;
+}
+
+export type UpdatePracticumReportInput = Pick<CreatePracticumReportInput,
+    'batch' | 'attendeeCount' | 'condition' | 'description' | 'issues' | 'followUp' | 'partnerId' | 'moduleId' | 'moduleTitle'>;
+
+export interface ReportModuleOptions {
+    options: { id: number; name: string }[];
+    /** Modul pada jadwal praktikum (pilihan awal). */
+    defaultModuleId: number | null;
+}
+
+export interface AsprakPartnerOption {
+    identifier: string;
+    fullName: string;
 }
 
 export interface VerifyPracticumReportInput {

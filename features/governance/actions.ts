@@ -7,8 +7,10 @@ import { revalidatePath } from 'next/cache';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { mkdir } from 'fs/promises';
-import { requirePermission } from '@/lib/auth';
+import { getSession, requirePermission } from '@/lib/auth';
+import { metaFromSession, repoSave } from '@/lib/repo-storage';
 import { deleteFile } from '@/lib/upload';
+import { writeActivityLog, getErrorMessage } from '@/lib/audit';
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
@@ -44,7 +46,7 @@ export async function getAllGovernanceDocsForDownload() {
         })
         .from(governanceDocs)
         .leftJoin(users, eq(governanceDocs.adminId, users.identifier))
-        .where(inArray(governanceDocs.type, ['SOP', 'LPJ Bulanan', 'Template Surat']))
+        .where(inArray(governanceDocs.type, ['SOP', 'LPJ Bulanan', 'Template Surat', 'Template Berita Acara']))
         .orderBy(desc(governanceDocs.createdAt));
 }
 
@@ -54,7 +56,7 @@ export async function uploadGovernanceDoc(formData: FormData) {
         const file = formData.get('file') as File;
         const coverFile = formData.get('cover') as File | null;
         const title = formData.get('title') as string;
-        const type = formData.get('type') as 'SOP' | 'LPJ Bulanan' | 'Template Surat';
+        const type = formData.get('type') as 'SOP' | 'LPJ Bulanan' | 'Template Surat' | 'Template Berita Acara';
         const adminId = formData.get('adminId') as string;
 
         if (!file || file.size === 0) {
@@ -72,14 +74,10 @@ export async function uploadGovernanceDoc(formData: FormData) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        const uploadDir = join(process.cwd(), 'public', 'uploads', 'governance');
-        await mkdir(uploadDir, { recursive: true });
 
         const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
         const filename = `${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-        const filePath = join(uploadDir, filename);
-
-        await writeFile(filePath, buffer);
+        await repoSave(`governance/${filename}`, buffer, { mime: file.type || undefined, meta: metaFromSession(await getSession().catch(() => null)) });
 
         // Handle Cover Image
         let coverPath = null;
@@ -87,9 +85,8 @@ export async function uploadGovernanceDoc(formData: FormData) {
             const coverBytes = await coverFile.arrayBuffer();
             const coverBuffer = Buffer.from(coverBytes);
             const coverFilename = `cover-${uniqueSuffix}-${coverFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-            const coverFilePath = join(uploadDir, coverFilename);
-            await writeFile(coverFilePath, coverBuffer);
-            coverPath = `/uploads/governance/${coverFilename}`;
+            await repoSave(`governance/covers/${coverFilename}`, coverBuffer, { mime: coverFile.type || undefined, meta: metaFromSession(await getSession().catch(() => null)) });
+            coverPath = `/uploads/governance/covers/${coverFilename}`;
         }
 
         await db.insert(governanceDocs).values({
@@ -104,8 +101,10 @@ export async function uploadGovernanceDoc(formData: FormData) {
         revalidatePath('/student/manage/governance');
         revalidatePath('/lecturer/manage/governance');
         revalidatePath('/');
+        await writeActivityLog({ module: 'governance', action: 'upload_document', entityType: 'governance_doc', description: 'Admin mengunggah dokumen tata kelola', metadata: { title, type, adminId, fileName: file.name, coverName: coverFile?.name } });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({ module: 'governance', action: 'upload_document', entityType: 'governance_doc', status: 'failed', description: 'Gagal mengunggah dokumen tata kelola', metadata: { formData, error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal mengupload dokumen tata kelola' };
     }
 }
@@ -116,7 +115,7 @@ export async function updateGovernanceDoc(id: number, formData: FormData) {
         const file = formData.get('file') as File | null;
         const coverFile = formData.get('cover') as File | null;
         const title = formData.get('title') as string;
-        const type = formData.get('type') as 'SOP' | 'LPJ Bulanan' | 'Template Surat' | 'Video Profil';
+        const type = formData.get('type') as 'SOP' | 'LPJ Bulanan' | 'Template Surat' | 'Template Berita Acara' | 'Video Profil';
 
         // Fetch old record to delete old files when replaced
         const oldDoc = await db.select().from(governanceDocs).where(eq(governanceDocs.id, id)).limit(1);
@@ -126,8 +125,6 @@ export async function updateGovernanceDoc(id: number, formData: FormData) {
             type,
         };
 
-        const uploadDir = join(process.cwd(), 'public', 'uploads', 'governance');
-        await mkdir(uploadDir, { recursive: true });
         const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
 
         if (file && file.size > 0) {
@@ -141,8 +138,7 @@ export async function updateGovernanceDoc(id: number, formData: FormData) {
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
             const filename = `${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-            const filePath = join(uploadDir, filename);
-            await writeFile(filePath, buffer);
+            await repoSave(`governance/${filename}`, buffer, { mime: file.type || undefined, meta: metaFromSession(await getSession().catch(() => null)) });
             updateData.filePath = `/uploads/governance/${filename}`;
         }
 
@@ -157,9 +153,8 @@ export async function updateGovernanceDoc(id: number, formData: FormData) {
             const coverBytes = await coverFile.arrayBuffer();
             const coverBuffer = Buffer.from(coverBytes);
             const coverFilename = `cover-${uniqueSuffix}-${coverFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-            const coverFilePath = join(uploadDir, coverFilename);
-            await writeFile(coverFilePath, coverBuffer);
-            updateData.coverPath = `/uploads/governance/${coverFilename}`;
+            await repoSave(`governance/covers/${coverFilename}`, coverBuffer, { mime: coverFile.type || undefined, meta: metaFromSession(await getSession().catch(() => null)) });
+            updateData.coverPath = `/uploads/governance/covers/${coverFilename}`;
         }
 
         await db.update(governanceDocs)
@@ -170,8 +165,10 @@ export async function updateGovernanceDoc(id: number, formData: FormData) {
         revalidatePath('/student/manage/governance');
         revalidatePath('/lecturer/manage/governance');
         revalidatePath('/');
+        await writeActivityLog({ module: 'governance', action: 'update_document', entityType: 'governance_doc', entityId: id, description: 'Admin memperbarui dokumen tata kelola', metadata: { id, title, type, fileName: file?.name, coverName: coverFile?.name } });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({ module: 'governance', action: 'update_document', entityType: 'governance_doc', entityId: id, status: 'failed', description: 'Gagal memperbarui dokumen tata kelola', metadata: { formData, error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal memperbarui dokumen tata kelola' };
     }
 }
@@ -194,8 +191,10 @@ export async function deleteGovernanceDoc(id: number) {
         revalidatePath('/student/manage/governance');
         revalidatePath('/lecturer/manage/governance');
         revalidatePath('/');
+        await writeActivityLog({ module: 'governance', action: 'delete_document', entityType: 'governance_doc', entityId: id, description: 'Admin menghapus dokumen tata kelola', metadata: { doc: doc[0] } });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({ module: 'governance', action: 'delete_document', entityType: 'governance_doc', entityId: id, status: 'failed', description: 'Gagal menghapus dokumen tata kelola', metadata: { error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal menghapus dokumen' };
     }
 }
