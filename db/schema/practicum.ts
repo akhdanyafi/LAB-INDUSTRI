@@ -1,4 +1,4 @@
-import { mysqlTable, int, varchar, text, datetime, mysqlEnum, index, date, foreignKey } from 'drizzle-orm/mysql-core';
+import { mysqlTable, int, varchar, text, datetime, mysqlEnum, index, date, foreignKey, mediumtext } from 'drizzle-orm/mysql-core';
 import { relations, sql } from 'drizzle-orm';
 import { users } from './users';
 import { rooms } from './bookings';
@@ -105,6 +105,7 @@ export const practicumReports = mysqlTable('practicum_reports', {
     id: int('id').autoincrement().primaryKey(),
     scheduledPracticumId: int('scheduled_practicum_id').notNull(),
     createdBy: varchar('created_by', { length: 50 }).notNull().references(() => users.identifier, { onDelete: 'cascade' }),
+    partnerId: varchar('partner_id', { length: 50 }).references(() => users.identifier, { onDelete: 'set null' }), // Asprak partner (opsional, maks. 1)
 
     // Data dari jadwal (disimpan sebagai snapshot)
     courseName: varchar('course_name', { length: 255 }).notNull(),
@@ -131,7 +132,11 @@ export const practicumReports = mysqlTable('practicum_reports', {
 
     createdAt: datetime('created_at').default(sql`CURRENT_TIMESTAMP`),
     updatedAt: datetime('updated_at'),
+    assistantSignature: mediumtext('assistant_signature'),             // TTD asprak pengisi (data URL PNG/JPEG)
+    moduleId: int('module_id'),                                         // Modul yang digunakan (modul MK)
+    moduleTitle: varchar('module_title', { length: 255 }),              // Judul modul (snapshot / ditulis asprak)
 }, (table) => ({
+    partnerIdx: index('pr_partner_idx').on(table.partnerId),
     scheduledPracticumIdx: index('pr_scheduled_practicum_idx').on(table.scheduledPracticumId),
     scheduledPracticumFk: foreignKey({
         columns: [table.scheduledPracticumId],
@@ -167,8 +172,8 @@ export const practicumReportsRelations = relations(practicumReports, ({ one }) =
 // ============================================
 export const practicumLpjDocs = mysqlTable('practicum_lpj_docs', {
     id: int('id').autoincrement().primaryKey(),
-    scheduledPracticumId: int('scheduled_practicum_id').notNull().references(() => scheduledPracticums.id, { onDelete: 'cascade' }),
-    uploaderId: varchar('uploader_id', { length: 50 }).notNull().references(() => users.identifier, { onDelete: 'cascade' }),
+    scheduledPracticumId: int('scheduled_practicum_id').notNull(),
+    uploaderId: varchar('uploader_id', { length: 50 }).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
     description: text('description'),
     filePath: varchar('file_path', { length: 500 }).notNull(),
@@ -179,6 +184,16 @@ export const practicumLpjDocs = mysqlTable('practicum_lpj_docs', {
     schedIdx: index('lpj_sched_idx').on(table.scheduledPracticumId),
     uploaderIdx: index('lpj_uploader_idx').on(table.uploaderId),
     periodIdx: index('lpj_period_idx').on(table.periodYear, table.periodMonth),
+    scheduledPracticumFk: foreignKey({
+        columns: [table.scheduledPracticumId],
+        foreignColumns: [scheduledPracticums.id],
+        name: 'lpj_sched_prac_fk',
+    }).onDelete('cascade'),
+    uploaderFk: foreignKey({
+        columns: [table.uploaderId],
+        foreignColumns: [users.identifier],
+        name: 'lpj_uploader_fk',
+    }).onDelete('cascade'),
 }));
 
 export const practicumLpjDocsRelations = relations(practicumLpjDocs, ({ one }) => ({
@@ -191,6 +206,5 @@ export const practicumLpjDocsRelations = relations(practicumLpjDocs, ({ one }) =
         references: [users.identifier],
     }),
 }));
-
 
 

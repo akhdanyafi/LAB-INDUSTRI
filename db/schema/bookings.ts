@@ -24,7 +24,7 @@ export const roomBookings = mysqlTable('room_bookings', {
     jumlahPeserta: int('jumlah_peserta').default(1), // Number of attendees
     suratPermohonan: varchar('surat_permohonan', { length: 255 }), // File path for permission letter (optional)
     dosenPembimbing: varchar('dosen_pembimbing', { length: 255 }), // Supervising lecturer name
-    status: mysqlEnum('status', ['Pending', 'Disetujui', 'Ditolak']).default('Pending'),
+    status: mysqlEnum('status', ['Pending', 'Disetujui', 'Ditolak', 'Selesai']).default('Pending'),
     rejectionReason: text('rejection_reason'),
     notificationRead: mysqlEnum('notification_read', ['0', '1']).default('0'), // Track if admin has seen auto-approval notification
 }, (table) => ({
