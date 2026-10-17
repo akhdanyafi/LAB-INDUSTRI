@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { requirePermission, getSession } from '@/lib/auth';
 import { createScheduledPracticumSchema, updateScheduledPracticumSchema } from './validator';
 import type { CreateScheduledPracticumInput, UpdateScheduledPracticumInput } from './types';
+import { writeActivityLog, getErrorMessage } from '@/lib/audit';
 
 /**
  * Get all scheduled practicums
@@ -47,8 +48,10 @@ export async function createScheduledPracticum(data: CreateScheduledPracticumInp
         revalidatePath('/lecturer/scheduled-practicum');
         revalidatePath('/student/scheduled-practicum');
         revalidatePath('/student/rooms');
+        await writeActivityLog({ module: 'scheduled_practicum', action: 'create', entityType: 'scheduled_practicum', description: 'Admin membuat jadwal praktikum', metadata: validated });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({ module: 'scheduled_practicum', action: 'create', entityType: 'scheduled_practicum', status: 'failed', description: 'Gagal membuat jadwal praktikum', metadata: { data, error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal membuat jadwal praktikum' };
     }
 }
@@ -66,8 +69,10 @@ export async function updateScheduledPracticum(id: number, data: UpdateScheduled
         revalidatePath('/lecturer/scheduled-practicum');
         revalidatePath('/student/scheduled-practicum');
         revalidatePath('/student/rooms');
+        await writeActivityLog({ module: 'scheduled_practicum', action: 'update', entityType: 'scheduled_practicum', entityId: id, description: 'Admin memperbarui jadwal praktikum', metadata: validated });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({ module: 'scheduled_practicum', action: 'update', entityType: 'scheduled_practicum', entityId: id, status: 'failed', description: 'Gagal memperbarui jadwal praktikum', metadata: { data, error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal memperbarui jadwal praktikum' };
     }
 }
@@ -83,8 +88,10 @@ export async function deleteScheduledPracticum(id: number) {
         revalidatePath('/lecturer/scheduled-practicum');
         revalidatePath('/student/scheduled-practicum');
         revalidatePath('/student/rooms');
+        await writeActivityLog({ module: 'scheduled_practicum', action: 'delete', entityType: 'scheduled_practicum', entityId: id, description: 'Admin menghapus jadwal praktikum' });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({ module: 'scheduled_practicum', action: 'delete', entityType: 'scheduled_practicum', entityId: id, status: 'failed', description: 'Gagal menghapus jadwal praktikum', metadata: { error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal menghapus jadwal praktikum' };
     }
 }
@@ -160,8 +167,80 @@ export async function bulkCreateScheduledPracticum(data: BulkCreateInput) {
         revalidatePath('/student/scheduled-practicum');
         revalidatePath('/student/rooms');
 
+        await writeActivityLog({ module: 'scheduled_practicum', action: 'bulk_create', entityType: 'scheduled_practicum', description: 'Admin membuat jadwal praktikum massal', metadata: { ...data, created, skipped } });
         return { success: true, created, skipped };
     } catch (error: any) {
+        await writeActivityLog({ module: 'scheduled_practicum', action: 'bulk_create', entityType: 'scheduled_practicum', status: 'failed', description: 'Gagal membuat jadwal praktikum massal', metadata: { data, error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal membuat jadwal massal' };
+    }
+}
+
+export interface BulkDeleteInput {
+    courseId: number;
+    roomId?: number;      // kosong = semua ruangan
+    daysOfWeek: number[]; // 0=Senin...6=Minggu
+    periodStart: string;  // "YYYY-MM-DD"
+    periodEnd: string;    // "YYYY-MM-DD"
+}
+
+function parseBulkDeleteFilter(data: BulkDeleteInput) {
+    if (!data.courseId) return { error: 'Mata kuliah wajib dipilih' };
+    if (!data.daysOfWeek || data.daysOfWeek.length === 0) return { error: 'Pilih minimal satu hari' };
+    if (!data.periodStart || !data.periodEnd) return { error: 'Periode wajib diisi' };
+
+    const periodStart = new Date(data.periodStart + 'T00:00:00');
+    const periodEnd = new Date(data.periodEnd + 'T23:59:59');
+    if (isNaN(periodStart.getTime()) || isNaN(periodEnd.getTime()) || periodStart > periodEnd) {
+        return { error: 'Rentang periode tidak valid' };
+    }
+    return {
+        filter: {
+            courseId: data.courseId,
+            roomId: data.roomId || undefined,
+            daysOfWeek: data.daysOfWeek,
+            periodStart,
+            periodEnd,
+        },
+    };
+}
+
+/**
+ * Preview a bulk delete: how many schedules (and attached berita acara/LPJ) match
+ */
+export async function previewBulkDeleteScheduledPracticum(data: BulkDeleteInput) {
+    try {
+        await requirePermission('practicum.manage');
+        const parsed = parseBulkDeleteFilter(data);
+        if (!parsed.filter) return { success: false, error: parsed.error };
+
+        const { ids, reportCount, lpjCount } = await ScheduledPracticumService.findForBulkDelete(parsed.filter);
+        return { success: true, count: ids.length, reportCount, lpjCount };
+    } catch (error: any) {
+        return { success: false, error: error.message || 'Gagal memeriksa jadwal' };
+    }
+}
+
+/**
+ * Bulk delete scheduled practicums matching course/room/days within a date range
+ */
+export async function bulkDeleteScheduledPracticum(data: BulkDeleteInput) {
+    try {
+        await requirePermission('practicum.manage');
+        const parsed = parseBulkDeleteFilter(data);
+        if (!parsed.filter) return { success: false, error: parsed.error };
+
+        const { ids, reportCount, lpjCount } = await ScheduledPracticumService.findForBulkDelete(parsed.filter);
+        await ScheduledPracticumService.deleteMany(ids);
+
+        revalidatePath('/admin/scheduled-practicum');
+        revalidatePath('/lecturer/scheduled-practicum');
+        revalidatePath('/student/scheduled-practicum');
+        revalidatePath('/student/rooms');
+
+        await writeActivityLog({ module: 'scheduled_practicum', action: 'bulk_delete', entityType: 'scheduled_practicum', description: 'Admin menghapus jadwal praktikum massal', metadata: { ...data, deleted: ids.length, deletedIds: ids, reportCount, lpjCount } });
+        return { success: true, deleted: ids.length };
+    } catch (error: any) {
+        await writeActivityLog({ module: 'scheduled_practicum', action: 'bulk_delete', entityType: 'scheduled_practicum', status: 'failed', description: 'Gagal menghapus jadwal praktikum massal', metadata: { data, error: getErrorMessage(error) } });
+        return { success: false, error: error.message || 'Gagal menghapus jadwal massal' };
     }
 }

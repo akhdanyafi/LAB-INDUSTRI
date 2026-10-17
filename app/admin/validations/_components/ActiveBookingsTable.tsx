@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { MapPin, User, CheckCircle, XCircle, Eye, X, ExternalLink, LayoutGrid, List, Trash2 } from 'lucide-react';
-import { updateBookingStatus, deleteBooking } from '@/features/bookings/actions';
+import { MapPin, User, CheckCircle, XCircle, Eye, X, ExternalLink, LayoutGrid, List, Trash2, CheckCheck } from 'lucide-react';
+import { updateBookingStatus, deleteBooking, completeBooking } from '@/features/bookings/actions';
 import { useAlert } from '@/components/providers/AlertProvider';
 import { translateError } from '@/lib/error';
 import RejectReasonModal from '@/components/ui/RejectReasonModal';
@@ -42,7 +42,11 @@ export default function ActiveBookingsTable({ bookings, sessionUserId }: ActiveB
 
     const handleApprove = (bookingId: number) => {
         startTransition(async () => {
-            await updateBookingStatus(bookingId, 'Disetujui', sessionUserId);
+            const result = await updateBookingStatus(bookingId, 'Disetujui', sessionUserId);
+            if (!result?.success) {
+                const { title, message } = translateError(result?.error, 'Gagal menyetujui booking');
+                showAlert({ title, message, type: 'error' });
+            }
         });
     };
 
@@ -57,13 +61,32 @@ export default function ActiveBookingsTable({ bookings, sessionUserId }: ActiveB
         setRejectModalOpen(false);
         setRejectingBookingId(null);
         startTransition(async () => {
-            try {
-                await updateBookingStatus(bookingId, 'Ditolak', sessionUserId, reason || undefined);
-                showAlert({ title: 'Berhasil', message: 'Permintaan booking ditolak', type: 'success' });
-            } catch (error: any) {
-                const { title, message } = translateError(error, 'Gagal menolak booking');
+            const result = await updateBookingStatus(bookingId, 'Ditolak', sessionUserId, reason || undefined);
+            if (!result?.success) {
+                const { title, message } = translateError(result?.error, 'Gagal menolak booking');
                 showAlert({ title, message, type: 'error' });
+                return;
             }
+            showAlert({ title: 'Berhasil', message: 'Permintaan booking ditolak', type: 'success' });
+        });
+    };
+
+    const handleComplete = async (bookingId: number) => {
+        const confirmed = await showConfirm({
+            title: 'Selesaikan Peminjaman',
+            message: 'Tandai ruangan telah selesai dipinjam? Jadwal akan dihapus dari kalender, namun tetap tersimpan di riwayat.',
+            type: 'info',
+            confirmText: 'Selesai'
+        });
+        if (!confirmed) return;
+        startTransition(async () => {
+            const result = await completeBooking(bookingId);
+            if (!result?.success) {
+                const { title, message } = translateError(result?.error, 'Gagal menandai booking selesai');
+                showAlert({ title, message, type: 'error' });
+                return;
+            }
+            showAlert({ title: 'Berhasil', message: 'Peminjaman ruangan ditandai selesai', type: 'success' });
         });
     };
 
@@ -76,13 +99,13 @@ export default function ActiveBookingsTable({ bookings, sessionUserId }: ActiveB
         });
         if (confirmed) {
             startTransition(async () => {
-                try {
-                    await deleteBooking(bookingId);
-                    showAlert({ title: 'Berhasil', message: 'Booking berhasil dihapus', type: 'success' });
-                } catch (error: any) {
-                    const { title, message } = translateError(error, 'Gagal menghapus booking');
+                const result = await deleteBooking(bookingId);
+                if (!result?.success) {
+                    const { title, message } = translateError(result?.error, 'Gagal menghapus booking');
                     showAlert({ title, message, type: 'error' });
+                    return;
                 }
+                showAlert({ title: 'Berhasil', message: 'Booking berhasil dihapus', type: 'success' });
             });
         }
     };
@@ -186,6 +209,16 @@ export default function ActiveBookingsTable({ bookings, sessionUserId }: ActiveB
                                                 </button>
                                             </>
                                         )}
+                                        {booking.status === 'Disetujui' && (
+                                            <button
+                                                onClick={() => handleComplete(booking.id)}
+                                                disabled={isPending}
+                                                className="text-blue-600 hover:text-blue-700 p-1.5 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                                                title="Tandai Selesai Dipinjam"
+                                            >
+                                                <CheckCheck className="w-4 h-4" />
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => handleDelete(booking.id)}
                                             disabled={isPending}
@@ -273,6 +306,15 @@ export default function ActiveBookingsTable({ bookings, sessionUserId }: ActiveB
                                                 <XCircle className="w-3.5 h-3.5" /> Tolak
                                             </button>
                                         </>
+                                    )}
+                                    {booking.status === 'Disetujui' && (
+                                        <button
+                                            onClick={() => handleComplete(booking.id)}
+                                            disabled={isPending}
+                                            className="flex-1 flex justify-center items-center gap-1 text-blue-700 bg-blue-50 hover:bg-blue-100 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                                        >
+                                            <CheckCheck className="w-3.5 h-3.5" /> Selesai
+                                        </button>
                                     )}
                                     <button
                                         onClick={() => handleDelete(booking.id)}

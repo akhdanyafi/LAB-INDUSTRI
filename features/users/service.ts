@@ -205,6 +205,23 @@ export class UserService {
     }
 
     /**
+     * Biodata tambahan Asisten Praktikum (pas foto & rekening honor)
+     */
+    static async updateProfileExtras(userId: string, data: {
+        photoPath?: string | null;
+        bankName?: string | null;
+        bankAccountNumber?: string | null;
+        bankAccountName?: string | null;
+    }) {
+        const updateData: Partial<typeof users.$inferInsert> = {};
+        for (const key of ['photoPath', 'bankName', 'bankAccountNumber', 'bankAccountName'] as const) {
+            if (data[key] !== undefined) updateData[key] = data[key];
+        }
+        if (Object.keys(updateData).length === 0) return;
+        await db.update(users).set(updateData).where(eq(users.identifier, userId));
+    }
+
+    /**
      * Verify password
      */
     static async verifyPassword(plainPassword: string, hashedPassword: string) {
