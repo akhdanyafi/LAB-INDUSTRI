@@ -1,12 +1,14 @@
 'use server';
 
+import { metaFromSession, repoRemove, repoSave } from '@/lib/repo-storage';
 import { db } from '@/db';
 import { governanceDocs, users } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
-import { requirePermission } from '@/lib/auth';
+import { getSession, requirePermission } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { mkdir, unlink, writeFile } from 'fs/promises';
 import { join } from 'path';
+import { writeActivityLog, getErrorMessage } from '@/lib/audit';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const DOWNLOAD_CENTER_TYPE = 'Pusat Download' as const;
@@ -48,15 +50,11 @@ export async function uploadDownloadCenterDoc(formData: FormData) {
             return { success: false, error: 'Ukuran file maksimal 10MB' };
         }
 
-        const uploadDir = join(process.cwd(), 'public', 'uploads', 'download-center');
-        await mkdir(uploadDir, { recursive: true });
-
-        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+                const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
         const filename = `${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-        const filePath = join(uploadDir, filename);
 
         const bytes = await file.arrayBuffer();
-        await writeFile(filePath, Buffer.from(bytes));
+        await repoSave(`download-center/${filename}`, Buffer.from(bytes), { mime: file.type || undefined, meta: metaFromSession(await getSession().catch(() => null), { note: title }) });
 
         await db.insert(governanceDocs).values({
             adminId,
@@ -70,8 +68,10 @@ export async function uploadDownloadCenterDoc(formData: FormData) {
         revalidatePath('/lecturer/download-center');
         revalidatePath('/student/download-center');
 
+        await writeActivityLog({ module: 'download_center', action: 'upload_document', entityType: 'download_center_doc', description: 'Admin mengunggah dokumen pusat download', metadata: { title, adminId, fileName: file.name, fileSize: file.size } });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({ module: 'download_center', action: 'upload_document', entityType: 'download_center_doc', status: 'failed', description: 'Gagal mengunggah dokumen pusat download', metadata: { formData, error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal upload dokumen pusat download' };
     }
 }
@@ -84,13 +84,7 @@ export async function deleteDownloadCenterDoc(id: number) {
         const doc = existing[0];
 
         if (doc?.filePath && doc.filePath.startsWith('/uploads/download-center/')) {
-            const relativePath = doc.filePath.replace('/uploads/', '');
-            const absolutePath = join(process.cwd(), 'public', relativePath);
-            try {
-                await unlink(absolutePath);
-            } catch {
-                // ignore if file already removed
-            }
+            await repoRemove(doc.filePath);
         }
 
         await db.delete(governanceDocs).where(eq(governanceDocs.id, id));
@@ -99,8 +93,10 @@ export async function deleteDownloadCenterDoc(id: number) {
         revalidatePath('/lecturer/download-center');
         revalidatePath('/student/download-center');
 
+        await writeActivityLog({ module: 'download_center', action: 'delete_document', entityType: 'download_center_doc', entityId: id, description: 'Admin menghapus dokumen pusat download', metadata: { doc } });
         return { success: true };
     } catch (error: any) {
+        await writeActivityLog({ module: 'download_center', action: 'delete_document', entityType: 'download_center_doc', entityId: id, status: 'failed', description: 'Gagal menghapus dokumen pusat download', metadata: { error: getErrorMessage(error) } });
         return { success: false, error: error.message || 'Gagal menghapus dokumen pusat download' };
     }
 }

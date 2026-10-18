@@ -17,18 +17,19 @@ export default async function AdminLayout({
     const menuItems = filterMenuByPermissions(session, ADMIN_MENU_ITEMS);
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex min-h-screen">
             <Sidebar
                 subtitle="Admin Panel"
                 menuItems={menuItems}
                 profileHref="/admin/profile"
+                repositoryHref="https://repository.fstuai.id"
                 user={{
                     fullName: session.user.fullName,
                     secondaryText: session.user.email,
                     initial: session.user.fullName.charAt(0)
                 }}
             />
-            <main className="flex-1 lg:ml-64 pt-20 p-4 lg:p-8 overflow-x-hidden">
+            <main className="flex-1 lg:ml-[var(--sidebar-width)] pt-20 p-4 lg:p-8 overflow-x-hidden">
                 <SessionRefresher />
                 {children}
             </main>

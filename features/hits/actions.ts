@@ -55,7 +55,7 @@ export async function addHitsInfo(formData: FormData) {
     if (!title) throw new Error('Judul informasi wajib diisi');
     if (!file || file.size === 0) throw new Error('Foto informasi wajib diunggah');
 
-    const imageUrl = await saveFile(file);
+    const imageUrl = await saveFile(file, { meta: { dir: 'Foto & Media/Informasi Terkini' } });
 
     await HitsService.create({
         title,
@@ -97,7 +97,7 @@ export async function updateHitsInfo(id: number, formData: FormData) {
         if (existing?.imageUrl) {
             await deleteFile(existing.imageUrl);
         }
-        imageUrl = await saveFile(file);
+        imageUrl = await saveFile(file, { meta: { dir: 'Foto & Media/Informasi Terkini' } });
     }
 
     await HitsService.update(id, {

@@ -259,7 +259,9 @@ export default async function RiwayatPage({
                                                     ? 'bg-yellow-100 text-yellow-700'
                                                     : booking.status === 'Disetujui'
                                                         ? 'bg-green-100 text-green-700'
-                                                        : 'bg-red-100 text-red-700'
+                                                        : booking.status === 'Selesai'
+                                                            ? 'bg-blue-100 text-blue-700'
+                                                            : 'bg-red-100 text-red-700'
                                                     }`}
                                             >
                                                 {booking.status}

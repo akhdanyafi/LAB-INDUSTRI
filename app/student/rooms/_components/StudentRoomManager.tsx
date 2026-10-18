@@ -34,6 +34,7 @@ export default function StudentRoomManager({
             'Pending': 'bg-yellow-50 text-yellow-700',
             'Disetujui': 'bg-green-50 text-green-700',
             'Ditolak': 'bg-red-50 text-red-700',
+            'Selesai': 'bg-blue-50 text-blue-700',
         };
         return styles[status as keyof typeof styles] || 'bg-gray-50 text-gray-700';
     };
@@ -43,6 +44,7 @@ export default function StudentRoomManager({
             case 'Pending': return <Clock className="w-4 h-4" />;
             case 'Disetujui': return <CheckCircle className="w-4 h-4" />;
             case 'Ditolak': return <XCircle className="w-4 h-4" />;
+            case 'Selesai': return <CheckCircle className="w-4 h-4" />;
             default: return <Clock className="w-4 h-4" />;
         }
     };
