@@ -22,6 +22,11 @@ export const users = mysqlTable('users', {
     programStudi: varchar('program_studi', { length: 100 }).default('Informatika'), // e.g. 'Informatika', 'Sistem Informasi'
     dosenPembimbing: varchar('dosen_pembimbing', { length: 255 }), // Stores dosen name directly (no FK relation)
     phoneNumber: varchar('phone_number', { length: 20 }), // Optional phone number
+    // Biodata tambahan (khususnya untuk role Asisten Praktikum)
+    photoPath: varchar('photo_path', { length: 255 }), // Pas foto
+    bankName: varchar('bank_name', { length: 100 }), // Nama bank
+    bankAccountNumber: varchar('bank_account_number', { length: 50 }), // Nomor rekening
+    bankAccountName: varchar('bank_account_name', { length: 255 }), // Nama pemilik rekening
     customRoleEnabled: boolean('custom_role_enabled').notNull().default(false),
     createdAt: datetime('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({

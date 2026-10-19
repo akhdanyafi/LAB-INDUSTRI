@@ -2,7 +2,7 @@ import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import SessionRefresher from '@/components/providers/SessionRefresher';
-import { STUDENT_MENU_ITEMS, getMenuForUser } from '@/lib/menu';
+import { STUDENT_MENU_ITEMS, getMenuForUser, isStudentPortalRole } from '@/lib/menu';
 
 export default async function StudentLayout({
     children,
@@ -11,13 +11,14 @@ export default async function StudentLayout({
 }) {
     const session = await getSession();
 
-    if (!session || session.user.role !== 'Mahasiswa') {
+    // Asisten Praktikum memakai portal mahasiswa + akses kelola praktikum (permission practicum.manage)
+    if (!session || !isStudentPortalRole(session.user.role)) {
         redirect('/login');
     }
     const menuItems = getMenuForUser(session, STUDENT_MENU_ITEMS, '/student');
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex min-h-screen">
             <Sidebar
                 subtitle="Student Portal"
                 menuItems={menuItems}
@@ -28,7 +29,7 @@ export default async function StudentLayout({
                     initial: session.user.fullName.charAt(0)
                 }}
             />
-            <main className="flex-1 lg:ml-64 pt-20 p-4 lg:p-8">
+            <main className="flex-1 lg:ml-[var(--sidebar-width)] pt-20 p-4 lg:p-8">
                 <SessionRefresher />
                 {children}
             </main>

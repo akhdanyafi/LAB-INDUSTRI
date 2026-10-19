@@ -66,6 +66,11 @@ async function main() {
     await addColumnIfNotExists(connection, 'users', 'dosen_pembimbing', 'VARCHAR(255) NULL');
     await addColumnIfNotExists(connection, 'users', 'status', "ENUM('Active','Inactive') DEFAULT 'Active'");
     await addColumnIfNotExists(connection, 'users', 'custom_role_enabled', 'BOOLEAN NOT NULL DEFAULT FALSE');
+    // Biodata Asisten Praktikum (pas foto & rekening)
+    await addColumnIfNotExists(connection, 'users', 'photo_path', 'VARCHAR(255) NULL');
+    await addColumnIfNotExists(connection, 'users', 'bank_name', 'VARCHAR(100) NULL');
+    await addColumnIfNotExists(connection, 'users', 'bank_account_number', 'VARCHAR(50) NULL');
+    await addColumnIfNotExists(connection, 'users', 'bank_account_name', 'VARCHAR(255) NULL');
 
     // ─── practicum_modules ────────────────────────────────────
     console.log('\n📚 Migrating practicum_modules...');
@@ -127,6 +132,33 @@ async function main() {
     } catch (err: any) {
         console.log(`  ⚠️  practicum_reports: ${err.message}`);
     }
+    // Fitur Asisten Praktikum: partner asprak, tanda tangan asprak, modul yang digunakan
+    await addColumnIfNotExists(connection, 'practicum_reports', 'partner_id', 'VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL AFTER `created_by`');
+    await addColumnIfNotExists(connection, 'practicum_reports', 'assistant_signature', 'MEDIUMTEXT NULL');
+    await addColumnIfNotExists(connection, 'practicum_reports', 'module_id', 'INT NULL');
+    await addColumnIfNotExists(connection, 'practicum_reports', 'module_title', 'VARCHAR(255) NULL');
+    for (const stmt of [
+        'ALTER TABLE `practicum_reports` ADD INDEX `pr_partner_idx` (`partner_id`), ADD CONSTRAINT `practicum_reports_partner_id_users_identifier_fk` FOREIGN KEY (`partner_id`) REFERENCES `users` (`identifier`) ON DELETE SET NULL',
+        'ALTER TABLE `practicum_reports` ADD CONSTRAINT `pr_module_id_fk` FOREIGN KEY (`module_id`) REFERENCES `practicum_modules` (`id`) ON DELETE SET NULL',
+    ]) {
+        try {
+            await connection.query(stmt);
+        } catch (err: any) {
+            if (!['ER_FK_DUP_NAME', 'ER_DUP_KEYNAME'].includes(err.code)) console.error(`  ❌ ${err.message}`);
+        }
+    }
+
+    // ─── Role Asisten Praktikum ─────────────────────────────────
+    // Portal mahasiswa + izin 'practicum.manage' (kelola modul & jadwal, isi berita acara,
+    // kelola evaluasi MK yang pernah dijadwalkannya) — sama seperti LAB-IF.
+    console.log('\n🎓 Role Asisten Praktikum...');
+    await connection.query("INSERT IGNORE INTO `roles` (`name`) VALUES ('Asisten Praktikum')");
+    await connection.query(
+        `INSERT IGNORE INTO \`role_permissions\` (\`role_id\`, \`permission_id\`)
+         SELECT r.id, p.id FROM \`roles\` r JOIN \`permissions\` p ON p.code = 'practicum.manage'
+         WHERE r.name = 'Asisten Praktikum'`
+    );
+    console.log('  ✅ Role Asisten Praktikum + practicum.manage siap');
     await connection.end();
     console.log('\n✅ Migration completed!');
 }
