@@ -7,6 +7,7 @@
  * Level 3: Keyword matching against extracted text
  */
 
+import { repoRead } from '@/lib/repo-storage';
 import { readFile, access } from 'fs/promises';
 import path from 'path';
 
@@ -277,17 +278,11 @@ export class DocumentVerifier {
      * Level 1: Validate file basics (exists, size, is valid PDF)
      */
     static async validateFile(filePath: string): Promise<FileValidationResult> {
-        const absolutePath = path.join(process.cwd(), 'public', filePath);
-
-        // Check file exists
-        try {
-            await access(absolutePath);
-        } catch {
+        // File disimpan di Repositori Lab (dengan cadangan lokal bila Repositori sedang tidak terjangkau).
+        const buffer = await repoRead(filePath);
+        if (!buffer) {
             return { valid: false, reason: 'File tidak ditemukan' };
         }
-
-        // Read file
-        const buffer = await readFile(absolutePath);
 
         // Check minimum size
         if (buffer.length < MIN_FILE_SIZE) {
@@ -339,8 +334,8 @@ export class DocumentVerifier {
         filePath: string,
         type: DocumentType
     ): Promise<VerificationResult> {
-        const absolutePath = path.join(process.cwd(), 'public', filePath);
-        const buffer = await readFile(absolutePath);
+        const buffer = await repoRead(filePath);
+        if (!buffer) throw new Error('File tidak ditemukan');
 
         // ─── Step 1: Try pdf-parse text extraction ───
         let text = '';

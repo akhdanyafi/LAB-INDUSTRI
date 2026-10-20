@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useTransition, useMemo, useCallback } from 'react';
-import { Plus, Trash2, Edit, X, Clock, MapPin, ChevronLeft, ChevronRight, BookOpen, FileText, CalendarRange } from 'lucide-react';
+import { Plus, Trash2, Edit, X, Clock, MapPin, ChevronLeft, ChevronRight, BookOpen, FileText, CalendarRange, CalendarX } from 'lucide-react';
 import TimeSelect from '@/components/shared/TimeSelect';
 import { createScheduledPracticum, updateScheduledPracticum, deleteScheduledPracticum } from '@/features/scheduled-practicum/actions';
 import BulkScheduleForm from './BulkScheduleForm';
+import BulkDeleteScheduleForm from './BulkDeleteScheduleForm';
 import type { ScheduledPracticumWithDetails } from '@/features/scheduled-practicum/types';
 import { DAY_NAMES } from '@/features/scheduled-practicum/types';
 import type { CourseWithLecturer } from '@/features/courses/types';
@@ -12,6 +13,7 @@ import type { PracticumModuleWithCourse } from '@/features/practicum/types';
 import type { PracticumReportWithDetails } from '@/features/practicum-reports/types';
 import { LecturerPracticumReportTable, AllPracticumLpjManager } from '@/features/practicum-reports/components';
 import ViewportPortal from '@/components/shared/ViewportPortal';
+import { translateError } from '@/lib/error';
 
 interface Room {
     id: number;
@@ -88,6 +90,7 @@ export default function ScheduledPracticumManager({ schedules, courses, modules,
 
     const [showForm, setShowForm] = useState(false);
     const [showBulkForm, setShowBulkForm] = useState(false);
+    const [showBulkDeleteForm, setShowBulkDeleteForm] = useState(false);
     const [editing, setEditing] = useState<ScheduledPracticumWithDetails | null>(null);
     const [formDate, setFormDate] = useState<string>('');
 
@@ -166,7 +169,8 @@ export default function ScheduledPracticumManager({ schedules, courses, modules,
                     setShowForm(false); setEditing(null); setFormDate('');
                 }
             } catch (err: any) {
-                setMessage({ type: 'error', text: 'Gagal menyimpan jadwal' });
+                const { message } = translateError(err, 'Gagal menyimpan jadwal');
+                setMessage({ type: 'error', text: message });
             }
         });
     };
@@ -181,7 +185,10 @@ export default function ScheduledPracticumManager({ schedules, courses, modules,
                 } else {
                     setMessage({ type: 'success', text: 'Jadwal dihapus!' });
                 }
-            } catch { setMessage({ type: 'error', text: 'Gagal menghapus' }); }
+            } catch (err: any) {
+                const { message } = translateError(err, 'Gagal menghapus');
+                setMessage({ type: 'error', text: message });
+            }
         });
     };
 
@@ -208,17 +215,31 @@ export default function ScheduledPracticumManager({ schedules, courses, modules,
                     <h1 className="text-2xl font-bold text-gray-900">Kalender Praktikum</h1>
                     <p className="text-gray-500 text-sm mt-1.5">Klik tanggal untuk melihat atau menambahkan jadwal praktikum</p>
                 </div>
-                <button
-                    onClick={() => setShowBulkForm(true)}
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm"
-                >
-                    <CalendarRange className="w-4 h-4" />
-                    Jadwal Massal
-                </button>
+                <div className="flex flex-wrap justify-end gap-2">
+                    <button
+                        onClick={() => setShowBulkDeleteForm(true)}
+                        className="flex items-center gap-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm"
+                    >
+                        <CalendarX className="w-4 h-4" />
+                        Hapus Massal
+                    </button>
+                    <button
+                        onClick={() => setShowBulkForm(true)}
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm"
+                    >
+                        <CalendarRange className="w-4 h-4" />
+                        Jadwal Massal
+                    </button>
+                </div>
             </div>
-                    Jadwal Massal
-                </button>
-            </div>
+
+            {showBulkDeleteForm && (
+                <BulkDeleteScheduleForm
+                    courses={courses}
+                    rooms={rooms}
+                    onClose={() => setShowBulkDeleteForm(false)}
+                />
+            )}
 
             {showBulkForm && (
                 <BulkScheduleForm

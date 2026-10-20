@@ -21,7 +21,7 @@ export interface Booking {
     jumlahPeserta: number | null;
     suratPermohonan: string | null;
     dosenPembimbing: string | null;
-    status: 'Pending' | 'Disetujui' | 'Ditolak';
+    status: 'Pending' | 'Disetujui' | 'Ditolak' | 'Selesai';
 }
 
 export interface BookingWithDetails extends Booking {
